@@ -1,150 +1,1224 @@
-<!-- FORM STARTS - SIMPLIFIED VERSION -->
-<form id="accidentForm" class="form-grid" action="https://script.google.com/macros/s/AKfycbwRkszK1VwTZkLOXYSQC-dRRhkPketQy3YuEVsrTFdsqCqlJJsSnPMFhcuisgr6wvE/exec" method="POST" target="uploadFrame" enctype="multipart/form-data">
-    <div class="datetime-row">
-        <div class="input-field">
-            <label><i class="fas fa-calendar-alt"></i> Date</label>
-            <input type="date" id="accidentDate" name="date" required>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>OnPoint Fleet · accident report + app QR</title>
+    <!-- Font & icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <!-- QR code generator (lightweight) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        body {
+            background: #0b2b5c;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.06) 0%, transparent 20%),
+                              radial-gradient(circle at 80% 70%, rgba(255,215,0,0.08) 0%, transparent 25%);
+            animation: bgShift 18s infinite alternate ease-in-out;
+            position: relative;
+        }
+        @keyframes bgShift {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 5% 5%; }
+        }
+
+        /* Floating WhatsApp button */
+        .floating-wa {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            background: #25D366;
+            color: white;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.25), 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.25s ease;
+            border: 3px solid white;
+            text-decoration: none;
+        }
+        .floating-wa:hover {
+            transform: scale(1.12) rotate(5deg);
+            background: #20b859;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+        }
+        /* Counter pill – modified to show incidents + 2026 */
+        .counter-pill {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            background: #ffffffdd;
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 12px 25px;
+            border: 1px solid #ffc107;
+            box-shadow: 0 15px 30px -8px #0b2b5c;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+            font-weight: 600;
+            color: #0b1f3b;
+        }
+        .counter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .counter-item i {
+            color: #d32f2f;
+            font-size: 1.3rem;
+        }
+        .counter-badge {
+            background: #1e4f8a;
+            color: white;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        /* New style for incident label below counter */
+        .incident-label {
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0b2b5c;
+            background: #ffd966cc;
+            padding: 4px 12px;
+            border-radius: 40px;
+            margin-top: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .report-card {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 42px;
+            box-shadow: 0 30px 55px -10px rgba(0,10,40,0.65), inset 0 1px 3px rgba(255,255,255,0.9);
+            padding: 2rem 1.8rem;
+            border: 1px solid rgba(255,255,255,0.7);
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 5;
+        }
+        .logo-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .logo-image {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 12px 18px -8px #0e2a46;
+            border: 2px solid #ffc107;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .logo-image:hover {
+            transform: scale(1.02) rotate(-1deg);
+        }
+        .logo-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.9rem;
+            letter-spacing: -0.02em;
+            color: #0b1f3b;
+            line-height: 1.1;
+        }
+        .logo-text small {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #2d4e8c;
+            display: block;
+        }
+        .address-badge {
+            background: #ffffffc0;
+            border-radius: 50px;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #10345e;
+            border: 1px solid #ffc107;
+            box-shadow: 0 6px 14px rgba(0,30,70,0.1);
+            backdrop-filter: blur(4px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .address-badge i {
+            color: #e63946;
+            font-size: 1rem;
+        }
+        .subhead {
+            font-size: 1rem;
+            color: #2f4b74;
+            font-weight: 500;
+            margin: 0 0 1.8rem 0;
+            border-left: 4px solid #2d7aff;
+            padding-left: 16px;
+            background: rgba(45, 122, 255, 0.04);
+            border-radius: 0 12px 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .map-mini-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            background: white;
+            border-radius: 40px;
+            padding: 4px 12px 4px 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .map-mini-container a {
+            color: #0b2b5c;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .map-mini-container i {
+            color: #ea4335;
+            font-size: 1.2rem;
+        }
+
+        .live-characters {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+            height: 45px;
+        }
+        .character {
+            width: 45px;
+            height: 45px;
+            background: #ffb703;
+            border-radius: 50% 50% 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7rem;
+            animation: bounce 2.2s infinite ease-in-out;
+            box-shadow: 0 8px 0 #b26500, 0 12px 20px rgba(0,0,0,0.2);
+            border: 2px solid white;
+            transform-origin: center bottom;
+        }
+        .character:nth-child(2) {
+            animation-delay: 0.3s;
+            background: #48cae4;
+            box-shadow: 0 8px 0 #0077b6;
+        }
+        .character:nth-child(3) {
+            animation-delay: 0.6s;
+            background: #a7c957;
+            box-shadow: 0 8px 0 #6b8e4c;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            40% { transform: translateY(-12px) rotate(2deg); }
+            70% { transform: translateY(-4px) rotate(-1deg); }
+        }
+
+        /* new QR + app download row */
+        .app-download-row {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,240,0.5);
+            border-radius: 40px;
+            padding: 10px 20px;
+            margin: 1.2rem 0 0.5rem;
+            border: 1px solid #ffd966;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .qr-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #qrCanvas {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: white;
+            padding: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 2px solid #2d7aff;
+        }
+        .app-link {
+            background: #0a2d5a;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+            border: 1px solid #ffc107;
+        }
+        .app-link:hover {
+            background: #123f6e;
+            transform: scale(1.02);
+        }
+        .app-link i {
+            font-size: 1.3rem;
+        }
+        .scan-note {
+            font-size: 0.85rem;
+            color: #1b3e68;
+            font-weight: 500;
+        }
+
+        .form-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+        .two-cols { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .two-cols > div { flex: 1 1 180px; }
+        .input-field { display: flex; flex-direction: column; gap: 6px; }
+        .input-field label { font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.3px; color: #1f3a60; display: flex; align-items: center; gap: 8px; }
+        .input-field label i { color: #2d7aff; width: 20px; font-size: 1rem; }
+        .input-field input, .input-field select, .input-field textarea {
+            background: white; border: 1.5px solid #dbe3f0; border-radius: 20px; padding: 15px 20px; font-size: 1rem;
+            font-weight: 500; color: #0b1f3b; outline: none; transition: all 0.2s; box-shadow: 0 4px 10px -5px rgba(0,0,0,0.02);
+        }
+        .input-field input:focus, .input-field select:focus, .input-field textarea:focus {
+            border-color: #2d7aff; box-shadow: 0 8px 18px -10px #2d7aff, 0 0 0 4px rgba(45,122,255,0.15);
+        }
+        .input-field textarea { min-height: 90px; resize: vertical; }
+        .yes-no-group { display: flex; gap: 24px; align-items: center; background: #f4f9ff; border-radius: 30px; padding: 10px 20px; border: 1px solid #d2e0f5; }
+        .yes-no-group label { font-weight: 500; text-transform: none; font-size: 1rem; color: #10345e; gap: 6px; }
+        .yes-no-group input[type="radio"] { accent-color: #1e4f8a; width: 18px; height: 18px; margin-right: 4px; }
+        .photo-upload-area { background: #f1f7ff; border-radius: 28px; padding: 1.8rem 1.2rem; border: 2px dashed #9bb8f0; text-align: center; cursor: pointer; transition: background 0.2s, border-color 0.2s; margin-top: 0.5rem; position: relative; }
+        .photo-upload-area:hover { background: #e3edff; border-color: #2d7aff; }
+        .photo-upload-area i { font-size: 3rem; color: #2d7aff; opacity: 0.8; margin-bottom: 0.5rem; }
+        .photo-upload-area .upload-text { font-weight: 700; font-size: 1.1rem; color: #103056; }
+        .photo-upload-area .upload-hint { font-size: 0.85rem; color: #476b9f; margin-top: 6px; }
+        #fileInput { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        .image-preview-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; align-items: center; }
+        .preview-thumb { width: 70px; height: 70px; border-radius: 18px; object-fit: cover; border: 3px solid white; box-shadow: 0 10px 18px -10px #1e3a5f; }
+        .file-name-badge { background: #ffffffd0; border-radius: 40px; padding: 8px 18px; font-size: 0.9rem; font-weight: 500; color: #092033; box-shadow: 0 4px 12px #d4e2fc; backdrop-filter: blur(2px); }
+        .datetime-row { display: flex; flex-direction: row; gap: 1rem; flex-wrap: wrap; }
+        .datetime-row .input-field { flex: 1 1 160px; }
+        
+        /* Updated button styles */
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .submit-btn {
+            background: #0a1f38;
+            border: none;
+            border-radius: 50px;
+            padding: 1.3rem 1.8rem;
+            color: white;
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #2d4e7b;
+            box-shadow: 0 20px 35px -12px #0f2542;
+            flex: 1;
+        }
+        .submit-btn:hover { background: #123456; transform: scale(1.02); box-shadow: 0 28px 40px -12px #0f1e33; }
+        .submit-btn i { font-size: 1.6rem; }
+        .submit-btn.gas-btn {
+            background: #2d7aff;
+        }
+        .submit-btn.gas-btn:hover {
+            background: #1a5ed9;
+        }
+        
+        .info-note { 
+            font-size: 0.85rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            background: #eef5ffb0; 
+            border-radius: 30px; 
+            padding: 12px 18px; 
+            color: #1f3d66; 
+            font-weight: 500; 
+            border: 1px solid #ffffff; 
+        }
+        .info-note i { color: #ff7b2d; }
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 30px;
+            padding: 15px 20px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        footer { text-align: center; margin-top: 20px; color: #2a4c7a; font-weight: 400; opacity: 0.9; }
+        hr { border: 1px solid #c9d9f0; margin: 0.5rem 0 1rem; opacity: 0.4; }
+        .attachment-badge {
+            background: #e8f0fe;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #1a4b8c;
+            border: 1px solid #b8d1fc;
+        }
+        .geo-badge {
+            background: #deedff;
+            border-radius: 30px;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .download-link {
+            color: #2d7aff;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .download-link:hover {
+            text-decoration: underline;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        @media (max-width: 480px) {
+            .report-card { padding: 1.5rem 1.2rem; border-radius: 32px; }
+            .logo-text { font-size: 1.6rem; }
+            .button-group { flex-direction: column; }
+            .counter-pill { top: 10px; right: 10px; padding: 8px 15px; gap: 12px; font-size: 0.8rem; }
+            .floating-wa { width: 55px; height: 55px; font-size: 2rem; bottom: 20px; right: 20px; }
+            .app-download-row { flex-direction: column; align-items: flex-start; }
+        }
+        .take{
+            color: blue;
+            text-align: center;
+            font-size: 15px;
+            align-items: center;
+        }
+        .take:hover{
+            opacity: 0.7;
+            transition: 0.7s;
+            cursor: hover;
+            color: red;
+            background-color: green;
+        }
+    </style>
+    <!-- Google Maps Geocoding API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=places&callback=initMap" async defer></script>
+</head>
+<body>
+    <!-- Floating WhatsApp button -->
+    <a href="https://wa.me/27672557297?text=Hello%20OnPoint%20Fleet%2C%20I%20need%20to%20report%20an%20incident" 
+       class="floating-wa" 
+       target="_blank" 
+       title="Chat with OnPoint on WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- Modified counter pill: embedded counter12 + "Incidents 2026" below -->
+    <div class="counter-pill" style="flex-direction: column; align-items: stretch; padding: 12px 20px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <!-- original counter12 code exactly as given -->
+            <div align=center><a href='https://www.counter12.com'><img src='https://www.counter12.com/img-3yZY1ZZwa29AB3dd-40.gif' border='0' alt='counter'></a><script type='text/javascript' src='https://www.counter12.com/ad.js?id=3yZY1ZZwa29AB3dd'></script></div>
         </div>
-        <div class="input-field">
-            <label><i class="fas fa-clock"></i> Time</label>
-            <input type="time" id="accidentTime" name="time" value="14:30" required>
-        </div>
+        <!-- label below: Incidents 2026 -->
+        <div class="incident-label"><i class="fas fa-car-crash"></i> App Visit 2026</div>
     </div>
 
-    <div class="two-cols">
-        <div class="input-field">
-            <label><i class="fas fa-car"></i> Vehicle reg.</label>
-            <input type="text" id="vehicleReg" name="vehicleReg" value="FLEET-408" required>
+    <div class="report-card">
+        <!-- Logo header -->
+        <div class="logo-header">
+            <div class="logo-area">
+                <div class="logo-image">
+                    <img src="images/logo.png" alt="OnPoint logo" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fas fa-truck\' style=\'font-size:2.5rem; color:#1a3b5d;\'></i>';">
+                </div>
+                <div class="logo-text">
+                    OnPoint onTime <small>fleet & logistics</small>
+                </div>
+            </div>
+            <div class="address-badge">
+                <i class="fas fa-map-marker-alt"></i> 71 Pretorius Rd, President Park, Midrand
+            </div>
         </div>
-        <div class="input-field">
-            <label><i class="fas fa-map-pin"></i> Location / street</label>
-            <input type="text" id="location" name="location" placeholder="Detecting address automatically..." value="" required>
+
+        <div class="live-characters">
+            <div class="character"><i class="fas fa-smile"></i></div>
+            <div class="character"><i class="fas fa-truck"></i></div>
+            <div class="character"><i class="fas fa-shield-hal"></i></div>
         </div>
-    </div>
 
-    <div class="two-cols">
-        <div class="input-field">
-            <label><i class="fas fa-tag"></i> Accident type</label>
-            <select id="accidentType" name="accidentType" required>
-                <option value="" disabled>– select –</option>
-                <option value="Rear-end" selected>Rear-end collision</option>
-                <option value="Side-impact">Side-impact / T-bone</option>
-                <option value="Rollover">Rollover / jackknife</option>
-                <option value="Single-vehicle">Single vehicle</option>
-                <option value="Other">Other / pedestrian</option>
-            </select>
+        <div class="subhead">
+            <i class="fas fa-clipboard-list" style="margin-right: 8px;"></i> complete accident report (auto‑location + stamped photo)
+            <div class="map-mini-container" id="liveMapLink">
+                <i class="fas fa-map-marked-alt"></i>
+                <a href="#" id="dynamicMapLink" target="_blank" title="open live map – auto updates">
+                    obtaining location...
+                </a>
+                <i class="fas fa-external-link-alt" style="font-size:0.7rem; opacity:0.6;"></i>
+            </div>
         </div>
-        <div class="input-field">
-            <label><i class="fas fa-id-card"></i> Unit #</label>
-            <input type="text" id="unitNumber" name="unitNumber" value="408" required>
+
+        <!-- NEW: APP DOWNLOAD QR CODE (exactly as requested) -->
+        <div class="app-download-row" id="appQrRow">
+            <div class="qr-container">
+                <canvas id="qrCanvas" width="60" height="60"></canvas>
+                <div>
+                    <div style="font-weight:700; color:#0f2d55;">📲 OnPoint driver app</div>
+                    <span class="scan-note"><i class="fas fa-camera"></i> scan QR to download APK</span>
+                </div>
+            </div>
+            <a href="https://drive.google.com/file/d/1fIw2dAfkfWjACAs2AyWrT8dL9gjbUBsz/view?usp=drive_link" 
+               class="app-link" target="_blank" rel="noopener">
+                <i class="fas fa-download"></i> get app (google drive)
+            </a>
         </div>
-    </div>
-
-    <div class="two-cols">
-        <div class="input-field">
-            <label><i class="fas fa-user"></i> Driver's name</label>
-            <input type="text" id="driverName" name="driverName" value="James Keller" required>
+        <br>
+        <div>
+            <a class="take" href="contacts.html">Vehicle Handover</a><br>
+            <small>click above if you are swapping vehicles</small><br><br>
         </div>
-        <div class="input-field">
-            <label><i class="fas fa-phone-alt"></i> Driver phone</label>
-            <input type="tel" id="driverPhone" name="driverPhone" value="+1 555 321 7890" required>
-        </div>
+        
+        <!-- Hidden iframe for Google Apps Script submission -->
+        <iframe id="uploadFrame" name="uploadFrame" style="display: none;"></iframe>
+
+        <!-- FORM STARTS -->
+        <form id="accidentForm" class="form-grid">
+            <div class="datetime-row">
+                <div class="input-field">
+                    <label><i class="fas fa-calendar-alt"></i> Date</label>
+                    <input type="date" id="accidentDate" name="date" required>
+                </div>
+                <div class="input-field">
+                    <label><i class="fas fa-clock"></i> Time</label>
+                    <input type="time" id="accidentTime" name="time" value="14:30" required>
+                </div>
+            </div>
+
+            <div class="two-cols">
+                <div class="input-field">
+                    <label><i class="fas fa-car"></i> Vehicle reg.</label>
+                    <input type="text" id="vehicleReg" name="vehicleReg" value="FLEET-408" required>
+                </div>
+                <div class="input-field">
+                    <label><i class="fas fa-map-pin"></i> Location / street</label>
+                    <input type="text" id="location" name="location" placeholder="Detecting address automatically..." value="" required>
+                </div>
+            </div>
+
+            <div class="two-cols">
+                <div class="input-field">
+                    <label><i class="fas fa-tag"></i> Accident type</label>
+                    <select id="accidentType" name="accidentType" required>
+                        <option value="" disabled>– select –</option>
+                        <option value="Rear-end" selected>Rear-end collision</option>
+                        <option value="Side-impact">Side-impact / T-bone</option>
+                        <option value="Rollover">Rollover / jackknife</option>
+                        <option value="Single-vehicle">Single vehicle</option>
+                        <option value="Other">Other / pedestrian</option>
+                    </select>
+                </div>
+                <div class="input-field">
+                    <label><i class="fas fa-id-card"></i> Unit #</label>
+                    <input type="text" id="unitNumber" name="unitNumber" value="408" required>
+                </div>
+            </div>
+
+            <div class="two-cols">
+                <div class="input-field">
+                    <label><i class="fas fa-user"></i> Driver's name</label>
+                    <input type="text" id="driverName" name="driverName" value="James Keller" required>
+                </div>
+                <div class="input-field">
+                    <label><i class="fas fa-phone-alt"></i> Driver phone</label>
+                    <input type="tel" id="driverPhone" name="driverPhone" value="+1 555 321 7890" required>
+                </div>
+            </div>
+
+            <div class="input-field">
+                <label><i class="fas fa-file-signature"></i> Description</label>
+                <textarea id="description" name="description" required>Front bumper crushed, airbags deployed. Slight rain. Other driver exchanged info.</textarea>
+            </div>
+
+            <div class="input-field">
+                <label><i class="fas fa-car-crash"></i> Other parties involved</label>
+                <input type="text" id="otherParties" name="otherParties" value="Honda CR-V, plate 7GHJ432">
+            </div>
+
+            <hr>
+            <div style="font-weight: 600; color: #0f2d55; margin-bottom: 8px;"><i class="fas fa-gavel" style="margin-right: 8px;"></i>OFFICIAL / POLICE INFORMATION</div>
+
+            <div class="input-field">
+                <label><i class="fas fa-building"></i> Reported to Metro</label>
+                <div class="yes-no-group">
+                    <label><input type="radio" name="reportedMetro" value="Yes" checked> Yes</label>
+                    <label><input type="radio" name="reportedMetro" value="No"> No</label>
+                </div>
+            </div>
+
+            <div class="two-cols">
+                <div class="input-field">
+                    <label><i class="fas fa-user-shield"></i> Officer name</label>
+                    <input type="text" id="officerName" name="officerName" value="Officer M. Davis">
+                </div>
+                <div class="input-field">
+                    <label><i class="fas fa-mobile-alt"></i> Officer cell</label>
+                    <input type="tel" id="officerPhone" name="officerPhone" value="555-987-6543">
+                </div>
+            </div>
+
+            <div class="input-field">
+                <label><i class="fas fa-wine-bottle"></i> Drunken driving involved</label>
+                <div class="yes-no-group">
+                    <label><input type="radio" name="drunkenDriving" value="Yes"> Yes</label>
+                    <label><input type="radio" name="drunkenDriving" value="No" checked> No</label>
+                </div>
+            </div>
+
+            <div class="input-field">
+                <label><i class="fas fa-hashtag"></i> Incident police report #</label>
+                <input type="text" id="policeReportNo" name="policeReportNo" value="PD-2309-452">
+            </div>
+
+            <div class="input-field">
+                <label><i class="fas fa-balance-scale"></i> Officer's judgement (are you at fault?)</label>
+                <div class="yes-no-group">
+                    <label><input type="radio" name="atFault" value="Yes"> Yes, at fault</label>
+                    <label><input type="radio" name="atFault" value="No" checked> No, not at fault</label>
+                </div>
+            </div>
+
+            <hr>
+            <!-- PHOTO UPLOAD AREA -->
+            <div class="photo-upload-area" id="dropZone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <div class="upload-text">attach accident image with GPS & date stamp</div>
+                <div class="upload-hint">tap to browse — overlay will be added automatically</div>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+
+            <!-- live preview -->
+            <div id="previewContainer" class="image-preview-row" style="display: none;">
+                <img id="imagePreview" class="preview-thumb" src="#" alt="stamped preview">
+                <span id="fileNameDisplay" class="file-name-badge"><i class="far fa-image"></i> accident.jpg</span>
+                <div class="attachment-badge">
+                    <i class="fas fa-map-marker-alt"></i> <span id="stampLocation">locating…</span>
+                </div>
+                <button type="button" id="clearImageBtn" style="background: none; border:none; color:#b00; margin-left:auto; font-size:1.5rem; cursor:pointer;"><i class="fas fa-times-circle"></i></button>
+            </div>
+
+            <!-- hidden fields for image data -->
+            <input type="hidden" id="imageBase64" name="imageBase64" value="">
+            <input type="hidden" id="imageFileName" name="imageFileName" value="">
+            <input type="hidden" id="imageFileType" name="imageFileType" value="">
+            <input type="hidden" id="capturedLat" name="lat" value="">
+            <input type="hidden" id="capturedLon" name="lon" value="">
+            <input type="hidden" id="capturedGeoUrl" name="geoUrl" value="">
+            <input type="hidden" id="submissionId" name="submissionId" value="">
+            <input type="hidden" id="submissionTimestamp" name="timestamp" value="">
+
+            <!-- Button Group -->
+            <div class="button-group">
+                <button type="button" id="mailtoBtn" class="submit-btn" style="background: #1a3b5d;">
+                    <i class="fas fa-envelope"></i> Email
+                </button>
+                
+                <button type="button" id="emlBtn" class="submit-btn" style="background: #2d4e8c;">
+                    <i class="fas fa-download"></i> Download EML
+                </button>
+                
+                <button type="button" id="gasBtn" class="submit-btn gas-btn">
+                    <i class="fas fa-cloud-upload-alt"></i> Save to Drive
+                </button>
+            </div>
+            
+            <!-- Status areas -->
+            <div id="uploadStatus" class="info-note" style="display: none;">
+                <i class="fas fa-spinner fa-pulse"></i> <span id="statusMessage">Processing...</span>
+            </div>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+            <div id="messageBox" style="display: none;"></div>
+            
+            <div class="info-note" style="margin-top: 10px;" id="attachmentStatus">
+                <i class="fas fa-info-circle"></i> No image — detecting address…
+            </div>
+            
+            <div class="info-note" style="background: #fff3cd; border-color: #ffeeba;">
+                <i class="fas fa-lightbulb" style="color: #856404;"></i>
+                <strong>Live map + address:</strong> street address is auto‑filled using Google Maps. <i class="fab fa-whatsapp" style="color:#25D366;"></i> WhatsApp button bottom right.
+            </div>
+        </form>
+        <footer>
+            <i class="fas fa-check-circle" style="color: #249c6b;"></i> OnPoint fleet – safety first · 71 Pretorius Rd, President Park, Midrand
+        </footer>
     </div>
 
-    <div class="input-field">
-        <label><i class="fas fa-file-signature"></i> Description</label>
-        <textarea id="description" name="description" required>Front bumper crushed, airbags deployed. Slight rain. Other driver exchanged info.</textarea>
-    </div>
+    <script>
+        (function() {
+            // ---------- CONFIGURATION - REPLACE WITH YOUR APPS SCRIPT URL ----------
+            const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // Replace this after deploying
+            
+            // ---------- DOM elements ----------
+            const fileInput = document.getElementById('fileInput');
+            const dropZone = document.getElementById('dropZone');
+            const previewContainer = document.getElementById('previewContainer');
+            const imagePreview = document.getElementById('imagePreview');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const stampLocationSpan = document.getElementById('stampLocation');
+            const clearImageBtn = document.getElementById('clearImageBtn');
+            const imageBase64Hidden = document.getElementById('imageBase64');
+            const imageFileNameHidden = document.getElementById('imageFileName');
+            const imageFileTypeHidden = document.getElementById('imageFileType');
+            const capturedLat = document.getElementById('capturedLat');
+            const capturedLon = document.getElementById('capturedLon');
+            const capturedGeoUrl = document.getElementById('capturedGeoUrl');
+            const attachmentStatus = document.getElementById('attachmentStatus');
+            const dynamicMapLink = document.getElementById('dynamicMapLink');
+            const locationInput = document.getElementById('location');
+            const submissionId = document.getElementById('submissionId');
+            const submissionTimestamp = document.getElementById('submissionTimestamp');
+            
+            const mailtoBtn = document.getElementById('mailtoBtn');
+            const emlBtn = document.getElementById('emlBtn');
+            const gasBtn = document.getElementById('gasBtn');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const statusMessage = document.getElementById('statusMessage');
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            const messageBox = document.getElementById('messageBox');
+            
+            // Iframe for submission
+            const uploadFrame = document.getElementById('uploadFrame');
 
-    <div class="input-field">
-        <label><i class="fas fa-car-crash"></i> Other parties involved</label>
-        <input type="text" id="otherParties" name="otherParties" value="Honda CR-V, plate 7GHJ432">
-    </div>
+            // state
+            let selectedFile = null;
+            let currentBase64 = '';          
+            let gpsCoords = { lat: null, lon: null, accuracy: null };
+            
+            // set today's date
+            document.getElementById('accidentDate').value = new Date().toISOString().split('T')[0];
 
-    <hr>
-    <div style="font-weight: 600; color: #0f2d55; margin-bottom: 8px;"><i class="fas fa-gavel" style="margin-right: 8px;"></i>OFFICIAL / POLICE INFORMATION</div>
+            // ---------- ACCIDENT COUNTER ----------
+            function getCurrentCounts() {
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                
+                let monthly = parseInt(localStorage.getItem('onpoint_monthly') || '0');
+                let yearly = parseInt(localStorage.getItem('onpoint_yearly') || '0');
+                let storedMonth = parseInt(localStorage.getItem('onpoint_month') || currentMonth);
+                let storedYear = parseInt(localStorage.getItem('onpoint_year') || currentYear);
+                
+                if (storedYear !== currentYear) {
+                    return { monthly: 0, yearly: 0, shouldResetMonthly: true, shouldResetYearly: true, currentMonth, currentYear };
+                } else if (storedMonth !== currentMonth) {
+                    return { monthly: 0, yearly, shouldResetMonthly: true, shouldResetYearly: false, currentMonth, currentYear };
+                }
+                
+                return { monthly, yearly, shouldResetMonthly: false, shouldResetYearly: false, currentMonth, currentYear };
+            }
 
-    <div class="input-field">
-        <label><i class="fas fa-building"></i> Reported to Metro</label>
-        <div class="yes-no-group">
-            <label><input type="radio" name="reportedMetro" value="Yes" checked> Yes</label>
-            <label><input type="radio" name="reportedMetro" value="No"> No</label>
-        </div>
-    </div>
+            function incrementCounters() {
+                const counts = getCurrentCounts();
+                const now = new Date();
+                
+                let monthly = counts.shouldResetMonthly ? 1 : counts.monthly + 1;
+                let yearly = counts.shouldResetYearly ? 1 : counts.yearly + 1;
+                
+                localStorage.setItem('onpoint_monthly', monthly);
+                localStorage.setItem('onpoint_yearly', yearly);
+                localStorage.setItem('onpoint_month', now.getMonth());
+                localStorage.setItem('onpoint_year', now.getFullYear());
+                
+                console.log(`Counters updated - Monthly: ${monthly}, Yearly: ${yearly}`);
+            }
 
-    <div class="two-cols">
-        <div class="input-field">
-            <label><i class="fas fa-user-shield"></i> Officer name</label>
-            <input type="text" id="officerName" name="officerName" value="Officer M. Davis">
-        </div>
-        <div class="input-field">
-            <label><i class="fas fa-mobile-alt"></i> Officer cell</label>
-            <input type="tel" id="officerPhone" name="officerPhone" value="555-987-6543">
-        </div>
-    </div>
+            // ---------- GEOCODING + AUTO‑FILL LOCATION FIELD ----------
+            function updateMapLink() {
+                if (gpsCoords.lat && gpsCoords.lon) {
+                    const lat = gpsCoords.lat.toFixed(6);
+                    const lon = gpsCoords.lon.toFixed(6);
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+                    capturedLat.value = lat;
+                    capturedLon.value = lon;
+                    capturedGeoUrl.value = mapsUrl;
+                    dynamicMapLink.href = mapsUrl;
+                    dynamicMapLink.innerHTML = `${lat}, ${lon} · live map`;
 
-    <div class="input-field">
-        <label><i class="fas fa-wine-bottle"></i> Drunken driving involved</label>
-        <div class="yes-no-group">
-            <label><input type="radio" name="drunkenDriving" value="Yes"> Yes</label>
-            <label><input type="radio" name="drunkenDriving" value="No" checked> No</label>
-        </div>
-    </div>
+                    if (window.google && google.maps) {
+                        const geocoder = new google.maps.Geocoder();
+                        geocoder.geocode({ location: { lat: gpsCoords.lat, lng: gpsCoords.lon } }, (results, status) => {
+                            if (status === 'OK' && results[0]) {
+                                const address = results[0].formatted_address;
+                                locationInput.value = address;
+                                attachmentStatus.innerHTML = `<i class="fas fa-check-circle"></i> Address detected: ${address.substring(0, 50)}...`;
+                            } else {
+                                locationInput.value = `${lat}, ${lon} (address unavailable)`;
+                                attachmentStatus.innerHTML = `<i class="fas fa-map-pin"></i> GPS locked, no address details`;
+                            }
+                        });
+                    } else {
+                        locationInput.value = `${lat}, ${lon}`;
+                        attachmentStatus.innerHTML = `<i class="fas fa-map-pin"></i> GPS locked (coordinates only)`;
+                    }
+                } else {
+                    dynamicMapLink.href = '#';
+                    dynamicMapLink.innerHTML = 'waiting for GPS …';
+                }
+            }
 
-    <div class="input-field">
-        <label><i class="fas fa-hashtag"></i> Incident police report #</label>
-        <input type="text" id="policeReportNo" name="policeReportNo" value="PD-2309-452">
-    </div>
+            // get location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        gpsCoords.lat = pos.coords.latitude;
+                        gpsCoords.lon = pos.coords.longitude;
+                        gpsCoords.accuracy = pos.coords.accuracy;
+                        updateMapLink();
+                    },
+                    (err) => {
+                        console.warn('GPS failed, fallback to Midrand default');
+                        gpsCoords.lat = -25.9989; 
+                        gpsCoords.lon = 28.1213;
+                        updateMapLink();
+                        locationInput.value = '71 Pretorius Rd, President Park, Midrand (default)';
+                        attachmentStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> GPS denied – using default Midrand address';
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                gpsCoords.lat = -25.9989; gpsCoords.lon = 28.1213;
+                updateMapLink();
+                locationInput.value = '71 Pretorius Rd, President Park, Midrand (default)';
+                attachmentStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> GPS not supported – using default';
+            }
 
-    <div class="input-field">
-        <label><i class="fas fa-balance-scale"></i> Officer's judgement (are you at fault?)</label>
-        <div class="yes-no-group">
-            <label><input type="radio" name="atFault" value="Yes"> Yes, at fault</label>
-            <label><input type="radio" name="atFault" value="No" checked> No, not at fault</label>
-        </div>
-    </div>
+            // ---------- STAMP IMAGE WITH LOCATION + DATE ----------
+            function stampImageWithOverlay(file) {
+                return new Promise((resolve, reject) => {
+                    if (!file) return reject('no file');
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            
+                            ctx.drawImage(img, 0, 0);
+                            
+                            const barHeight = 60;
+                            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                            ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+                            
+                            ctx.font = 'bold 22px "Inter", Arial, sans-serif';
+                            ctx.fillStyle = '#ffc107';
+                            ctx.shadowColor = '#000';
+                            ctx.shadowBlur = 8;
+                            
+                            const now = new Date();
+                            const dateStr = now.toLocaleDateString('en-ZA') + ' ' + now.toLocaleTimeString('en-ZA', {hour12: false});
+                            const locationStr = (gpsCoords.lat && gpsCoords.lon) ? 
+                                `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)}` : 'location pending';
+                            
+                            ctx.fillText(`📅 ${dateStr}`, 20, canvas.height - 32);
+                            ctx.fillText(`📍 ${locationStr}`, 20, canvas.height - 8);
+                            
+                            const stampedBase64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+                            const previewUrl = canvas.toDataURL('image/jpeg', 0.8);
+                            
+                            resolve({
+                                stampedBase64,
+                                previewUrl,
+                                fileName: `stamped_${file.name.replace(/\.[^/.]+$/, '')}.jpg`,
+                                locationText: locationStr
+                            });
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
 
-    <hr>
-    
-    <!-- PHOTO UPLOAD AREA -->
-    <div class="photo-upload-area" id="dropZone">
-        <i class="fas fa-cloud-upload-alt"></i>
-        <div class="upload-text">attach accident image with GPS & date stamp</div>
-        <div class="upload-hint">tap to browse — overlay will be added automatically</div>
-        <input type="file" id="fileInput" accept="image/*">
-    </div>
+            async function handleFileSelect(file) {
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image');
+                    return;
+                }
+                
+                try {
+                    attachmentStatus.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> stamping image with location & time...';
+                    const stamped = await stampImageWithOverlay(file);
+                    
+                    currentBase64 = stamped.stampedBase64;
+                    imageBase64Hidden.value = currentBase64;
+                    imageFileNameHidden.value = stamped.fileName;
+                    imageFileTypeHidden.value = 'image/jpeg';
+                    
+                    imagePreview.src = stamped.previewUrl;
+                    fileNameDisplay.innerHTML = `<i class="far fa-file-image"></i> ${stamped.fileName}`;
+                    stampLocationSpan.innerText = stamped.locationText;
+                    previewContainer.style.display = 'flex';
+                    
+                    attachmentStatus.innerHTML = `<i class="fas fa-check-circle" style="color:#2a7f2a;"></i> stamped ready – ${stamped.fileName}`;
+                } catch (err) {
+                    alert('Error processing image');
+                    console.error(err);
+                }
+            }
 
-    <!-- live preview -->
-    <div id="previewContainer" class="image-preview-row" style="display: none;">
-        <img id="imagePreview" class="preview-thumb" src="#" alt="stamped preview">
-        <span id="fileNameDisplay" class="file-name-badge"><i class="far fa-image"></i> accident.jpg</span>
-        <div class="attachment-badge">
-            <i class="fas fa-map-marker-alt"></i> <span id="stampLocation">locating…</span>
-        </div>
-        <button type="button" id="clearImageBtn" style="background: none; border:none; color:#b00; margin-left:auto; font-size:1.5rem; cursor:pointer;"><i class="fas fa-times-circle"></i></button>
-    </div>
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+            });
 
-    <!-- Hidden iframe for submission -->
-    <iframe id="uploadFrame" name="uploadFrame" style="display: none;"></iframe>
+            dropZone.addEventListener('dragover', (e) => e.preventDefault());
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (e.dataTransfer.files.length > 0) handleFileSelect(e.dataTransfer.files[0]);
+            });
 
-    <!-- hidden fields for image data -->
-    <input type="hidden" id="imageBase64" name="imageBase64" value="">
-    <input type="hidden" id="imageFileName" name="imageFileName" value="">
-    <input type="hidden" id="imageFileType" name="imageFileType" value="">
-    <input type="hidden" id="capturedLat" name="lat" value="">
-    <input type="hidden" id="capturedLon" name="lon" value="">
-    <input type="hidden" id="submissionId" name="submissionId" value="">
+            clearImageBtn.addEventListener('click', () => {
+                selectedFile = null;
+                fileInput.value = '';
+                imageBase64Hidden.value = '';
+                imageFileNameHidden.value = '';
+                imageFileTypeHidden.value = '';
+                currentBase64 = '';
+                previewContainer.style.display = 'none';
+                attachmentStatus.innerHTML = 'No image — GPS will be fetched live';
+                stampLocationSpan.innerText = 'locating…';
+            });
 
-    <!-- Submit Button - now a proper submit button -->
-    <button type="submit" id="submitBtn" class="submit-btn">
-        <i class="fas fa-cloud-upload-alt"></i> SUBMIT TO GOOGLE DRIVE
-    </button>
-    
-    <!-- Status area -->
-    <div id="statusArea" class="info-note" style="display: none;"></div>
-    <div id="successArea" class="success-message" style="display: none;"></div>
-    
-    <div class="info-note" style="margin-top: 10px;" id="attachmentStatus">
-        <i class="fas fa-info-circle"></i> No image — detecting address…
-    </div>
-</form>
+            // ---------- FORM DATA COLLECTION ----------
+            function getFormData() {
+                const reported = document.querySelector('input[name="reportedMetro"]:checked');
+                const drunken = document.querySelector('input[name="drunkenDriving"]:checked');
+                const atFault = document.querySelector('input[name="atFault"]:checked');
+                
+                // Generate unique ID
+                const uniqueId = 'ONP_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                submissionId.value = uniqueId;
+                submissionTimestamp.value = new Date().toISOString();
+                
+                return {
+                    submissionId: uniqueId,
+                    timestamp: new Date().toISOString(),
+                    
+                    date: document.getElementById('accidentDate').value,
+                    time: document.getElementById('accidentTime').value,
+                    vehicleReg: document.getElementById('vehicleReg').value,
+                    location: document.getElementById('location').value,
+                    accidentType: document.getElementById('accidentType').value,
+                    unitNumber: document.getElementById('unitNumber').value,
+                    
+                    driverName: document.getElementById('driverName').value,
+                    driverPhone: document.getElementById('driverPhone').value,
+                    
+                    description: document.getElementById('description').value,
+                    otherParties: document.getElementById('otherParties').value || 'None',
+                    
+                    reportedMetro: reported ? reported.value : 'Not specified',
+                    officerName: document.getElementById('officerName').value || 'N/A',
+                    officerPhone: document.getElementById('officerPhone').value || 'N/A',
+                    drunkenDriving: drunken ? drunken.value : 'Not specified',
+                    policeReportNo: document.getElementById('policeReportNo').value || 'N/A',
+                    atFault: atFault ? atFault.value : 'Not specified',
+                    
+                    lat: capturedLat.value || 'unknown',
+                    lon: capturedLon.value || 'unknown',
+                    geoUrl: capturedGeoUrl.value || '',
+                    
+                    hasImage: currentBase64 ? true : false,
+                    imageFileName: imageFileNameHidden.value || '',
+                    imageFileType: imageFileTypeHidden.value || '',
+                    imageBase64: currentBase64 || ''
+                };
+            }
+
+            function validateForm(data) {
+                const required = [data.date, data.time, data.vehicleReg, data.location, data.accidentType, data.unitNumber, data.driverName, data.driverPhone, data.description];
+                if (required.some(f => !f)) {
+                    alert('Please fill all required fields');
+                    return false;
+                }
+                return true;
+            }
+
+            function showMessage(text, isSuccess = true) {
+                messageBox.style.display = 'block';
+                messageBox.className = isSuccess ? 'success-message' : 'success-message error-message';
+                messageBox.innerHTML = `<i class="fas ${isSuccess ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> ${text}`;
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 5000);
+            }
+
+            // ---------- EMAIL FUNCTIONS (keep existing) ----------
+            function createEmailBody(data) {
+                let body = `ONPOINT FLEET – ACCIDENT REPORT (GPS-AUDIT)\r\n`;
+                body += `==========================================\r\n`;
+                body += `📅 DATE/TIME: ${data.date} ${data.time}\r\n`;
+                body += `🚗 VEHICLE: ${data.vehicleReg}  |  UNIT: ${data.unitNumber}\r\n`;
+                body += `📍 STREET/ADDRESS: ${data.location}\r\n`;
+                body += `🌐 LIVE GPS: https://www.google.com/maps?q=${data.lat},${data.lon}  (lat:${data.lat}, lon:${data.lon})\r\n`;
+                body += `🚧 TYPE: ${data.accidentType}\r\n`;
+                body += `🧑 DRIVER: ${data.driverName} ☎ ${data.driverPhone}\r\n`;
+                body += `📄 DESCRIPTION: ${data.description}\r\n`;
+                body += `🚙 OTHER PARTIES: ${data.otherParties || 'none'}\r\n`;
+                body += `\r\n👮‍♂️ OFFICIAL / POLICE INFO\r\n`;
+                body += `REPORTED: ${data.reportedMetro}  |  OFFICER: ${data.officerName} / ${data.officerPhone}\r\n`;
+                body += `DRUNKEN DRIVING: ${data.drunkenDriving}  |  REPORT#: ${data.policeReportNo}\r\n`;
+                body += `AT FAULT?: ${data.atFault}\r\n`;
+                if (imageFileNameHidden.value) {
+                    body += `\r\n📸 STAMPED PHOTO: ${imageFileNameHidden.value} (with location & timestamp overlay)\r\n`;
+                }
+                body += `\r\n-- \r\nOnPoint Fleet – report generated from live GPS. 71 Pretorius Rd, Midrand.\r\n`;
+                return body;
+            }
+
+            function handleSend(action) {
+                const data = getFormData();
+                if (!validateForm(data)) return;
+
+                incrementCounters();
+
+                if (action === 'mailto') {
+                    const recipient = 'fleet@onpointontime.co.za';
+                    const subject = `🚨 Accident - Unit ${data.unitNumber} - ${data.date} GPS`;
+                    const body = createEmailBody(data);
+                    const mailto = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    window.location.href = mailto;
+                } else if (action === 'eml') {
+                    const recipient = 'fleet@onpointontime.co.za';
+                    const subject = `Accident - Unit ${data.unitNumber} - ${data.date} (GPS stamped)`;
+                    const bodyText = createEmailBody(data);
+                    const boundary = '----=_NextPart_' + Math.random().toString(36).substring(2, 18);
+
+                    let eml = `From: "OnPoint Driver" <driver@onpointfleet.com>\r\n`;
+                    eml += `To: ${recipient}\r\n`;
+                    eml += `Subject: ${subject}\r\n`;
+                    eml += `MIME-Version: 1.0\r\n`;
+                    eml += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n`;
+                    eml += `This is a multipart message.\r\n\r\n`;
+                    eml += `--${boundary}\r\n`;
+                    eml += `Content-Type: text/plain; charset="utf-8"\r\n`;
+                    eml += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
+                    eml += bodyText.replace(/\n/g, '\r\n') + '\r\n\r\n';
+
+                    if (currentBase64) {
+                        eml += `--${boundary}\r\n`;
+                        eml += `Content-Type: image/jpeg; name="${imageFileNameHidden.value}"\r\n`;
+                        eml += `Content-Transfer-Encoding: base64\r\n`;
+                        eml += `Content-Disposition: attachment; filename="${imageFileNameHidden.value}"\r\n\r\n`;
+
+                        const base64Data = currentBase64;
+                        for (let i = 0; i < base64Data.length; i += 76) {
+                            eml += base64Data.substr(i, 76) + '\r\n';
+                        }
+                        eml += `\r\n`;
+                    }
+
+                    eml += `--${boundary}--\r\n`;
+
+                    const blob = new Blob([eml], { type: 'message/rfc822' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `accident_${data.unitNumber}_${data.date.replace(/-/g,'')}.eml`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showMessage('EML downloaded – open in Outlook/Thunderbird to see stamped photo.', true);
+                }
+            }
+
+            // ---------- GOOGLE APPS SCRIPT SUBMISSION ----------
+            function submitToGoogleDrive() {
+                // Check if URL is configured
+                if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxdzJQ8bmwRu9yZDTDU7EJDz9aUmA7JMffsALZDshg5bnHAWhhVheY4KndeSY70onmy/exec') {
+                    showMessage('Please configure your Google Apps Script URL first. See instructions below.', false);
+                    return;
+                }
+
+                const data = getFormData();
+                if (!validateForm(data)) return;
+
+                // Show progress
+                gasBtn.disabled = true;
+                uploadStatus.style.display = 'flex';
+                progressBar.style.display = 'block';
+                messageBox.style.display = 'none';
+                statusMessage.innerText = 'Preparing submission...';
+                progressFill.style.width = '25%';
+
+                // Increment counters
+                incrementCounters();
+
+                // Create a temporary form for iframe submission
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'uploadFrame';
+                form.style.display = 'none';
+
+                // Add all form fields as hidden inputs
+                for (const [key, value] of Object.entries(data)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                    form.appendChild(input);
+                }
+
+                // Add form to body
+                document.body.appendChild(form);
+                
+                progressFill.style.width = '50%';
+                statusMessage.innerText = 'Submitting to Google Drive...';
+
+                // Set up iframe load handler
+                uploadFrame.onload = function() {
+                    progressFill.style.width = '100%';
+                    statusMessage.innerText = 'Submission complete!';
+                    
+                    showMessage('Report successfully sent to Google Drive! Report ID: ' + data.submissionId, true);
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        form.remove();
+                        gasBtn.disabled = false;
+                        uploadStatus.style.display = 'none';
+                        progressBar.style.display = 'none';
+                        progressFill.style.width = '0%';
+                    }, 2000);
+                };
+
+                // Handle iframe error
+                uploadFrame.onerror = function() {
+                    statusMessage.innerText = 'Submission failed';
+                    progressFill.style.background = '#dc3545';
+                    
+                    showMessage('Submission failed. Please try again.', false);
+                    
+                    setTimeout(() => {
+                        form.remove();
+                        gasBtn.disabled = false;
+                        uploadStatus.style.display = 'none';
+                        progressBar.style.display = 'none';
+                        progressFill.style.width = '0%';
+                        progressFill.style.background = '#28a745';
+                    }, 2000);
+                };
+
+                // Submit the form
+                form.submit();
+            }
+
+            // Event listeners
+            mailtoBtn.addEventListener('click', () => handleSend('mailto'));
+            emlBtn.addEventListener('click', () => handleSend('eml'));
+            gasBtn.addEventListener('click', submitToGoogleDrive);
+
+            // Google Maps callback
+            window.initMap = function() {
+                if (gpsCoords.lat && gpsCoords.lon) updateMapLink();
+            };
+
+            // ---------- QR CODE for the app link ----------
+            const appLink = "https://drive.google.com/file/d/1fIw2dAfkfWjACAs2AyWrT8dL9gjbUBsz/view?usp=drive_link";
+            const qrCanvas = document.getElementById('qrCanvas');
+            if (qrCanvas) {
+                QRCode.toCanvas(qrCanvas, appLink, { width: 60, margin: 0, color: { dark: '#0b2b5c', light: '#ffffff' } }, (error) => {
+                    if (error) console.error('QR error', error);
+                });
+            }
+
+            // Check if URL is placeholder and show warning
+            if (https://script.google.com/macros/s/AKfycbxdzJQ8bmwRu9yZDTDU7EJDz9aUmA7JMffsALZDshg5bnHAWhhVheY4KndeSY70onmy/exec') {
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'info-note';
+                warningDiv.style.background = '#fff3cd';
+                warningDiv.style.marginTop = '20px';
+                warningDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
+                    <strong>⚠️ Setup Required:</strong> Replace YOUR_APPS_SCRIPT_URL_HERE with your actual Apps Script URL.
+                `;
+                document.querySelector('.form-grid').appendChild(warningDiv);
+            }
+        })();
+    </script>
+</body>
+</html>
