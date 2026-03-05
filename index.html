@@ -589,7 +589,7 @@
                 </div>
                 <div class="input-field">
                     <label><i class="fas fa-phone-alt"></i> Driver phone</label>
-                    <input type="tel" id="driverPhone" value="+1 555 321 7890" required>
+                    <input type="tel" id="driverPhone" value="+27 555 321 7890" required>
                 </div>
             </div>
 
@@ -674,7 +674,7 @@
             <input type="hidden" id="capturedGeoUrl" value="">
 
             <!-- CONFIGURATION - REPLACE WITH YOUR APPS SCRIPT URL -->
-            <input type="hidden" id="appsScriptUrl" value="YOUR_APPS_SCRIPT_URL_HERE">
+            <input type="hidden" id="appsScriptUrl" value="https://script.google.com/macros/s/AKfycbxHW4vJoj5k18XmlJNfl4_EMyWXyq1T429REUpMg0NswCsEwg2-IQqBVNlwftePYRBs/exec">
 
             <!-- Submit Button -->
             <button type="button" id="submitToGASBtn" class="submit-btn">
@@ -707,7 +707,7 @@
     <script>
         (function() {
             // ---------- CONFIGURATION - REPLACE WITH YOUR APPS SCRIPT URL ----------
-            const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // You'll replace this after deploying the Apps Script
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHW4vJoj5k18XmlJNfl4_EMyWXyq1T429REUpMg0NswCsEwg2-IQqBVNlwftePYRBs/exec'; // You'll replace this after deploying the Apps Script
             
             // ---------- DOM elements ----------
             const fileInput = document.getElementById('fileInput');
@@ -996,7 +996,7 @@
             // ---------- UPLOAD TO GOOGLE APPS SCRIPT ----------
             async function uploadToGoogleDrive() {
                 // Check if URL is configured
-                if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+                if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxHW4vJoj5k18XmlJNfl4_EMyWXyq1T429REUpMg0NswCsEwg2-IQqBVNlwftePYRBs/exec') {
                     alert('Please configure your Google Apps Script URL first. See instructions below.');
                     return;
                 }
@@ -1118,7 +1118,7 @@
             }
 
             // Add instructions for setup
-            if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+            if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxHW4vJoj5k18XmlJNfl4_EMyWXyq1T429REUpMg0NswCsEwg2-IQqBVNlwftePYRBs/exec') {
                 const instructionDiv = document.createElement('div');
                 instructionDiv.className = 'info-note';
                 instructionDiv.style.background = '#fff3cd';
