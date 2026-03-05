@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Professional Drive Uploader</title>
+
+<script src="https://accounts.google.com/gsi/client"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6fb;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.container{
+width:450px;
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
+}
+
+h2{text-align:center}
+
+#drop{
+border:2px dashed #aaa;
+padding:40px;
+text-align:center;
+margin-top:15px;
+cursor:pointer;
+}
+
+#progress{
+width:100%;
+background:#eee;
+height:10px;
+margin-top:15px;
+border-radius:5px;
+}
+
+#bar{
+width:0%;
+height:100%;
+background:#4285f4;
+}
+
+button{
+width:100%;
+padding:12px;
+margin-top:15px;
+border:none;
+background:#4285f4;
+color:white;
+font-size:16px;
+border-radius:5px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Google Drive Upload</h2>
+
+<button onclick="login()">Login With Google</button>
+
+<input type="file" id="file" />
+
+<div id="progress">
+<div id="bar"></div>
+</div>
+
+<button onclick="uploadFile()">Upload File</button>
+
+<p id="status"></p>
+
+</div>
+
+<script>
+
+const CLIENT_ID = "PASTE_CLIENT_ID_HERE";
+
+let accessToken = null;
+
+function login(){
+
+google.accounts.oauth2.initTokenClient({
+client_id: CLIENT_ID,
+scope: "https://www.googleapis.com/auth/drive.file",
+callback: (tokenResponse)=>{
+accessToken = tokenResponse.access_token;
+document.getElementById("status").innerText="Logged in";
+}
+}).requestAccessToken();
+
+}
+
+async function uploadFile(){
+
+const file = document.getElementById("file").files[0];
+
+if(!file){
+alert("Select file");
+return;
+}
+
+const metadata = {
+name:file.name,
+mimeType:file.type
+};
+
+const res = await fetch(
+"https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
+{
+method:"POST",
+headers:{
+Authorization:"Bearer "+accessToken,
+"Content-Type":"application/json"
+},
+body:JSON.stringify(metadata)
+});
+
+const uploadUrl = res.headers.get("Location");
+
+uploadChunks(file,uploadUrl);
+
+}
+
+function uploadChunks(file,url){
+
+const chunkSize = 5 * 1024 * 1024;
+
+let start = 0;
+
+function next(){
+
+let end = Math.min(start + chunkSize,file.size);
+
+let blob = file.slice(start,end);
+
+fetch(url,{
+method:"PUT",
+headers:{
+"Content-Length": blob.size,
+"Content-Range": `bytes ${start}-${end-1}/${file.size}`
+},
+body:blob
+})
+.then(res=>{
+
+start=end;
+
+let percent = Math.round((start/file.size)*100);
+
+document.getElementById("bar").style.width=percent+"%";
+
+if(start < file.size){
+
+next();
+
+}else{
+
+document.getElementById("status").innerText="Upload complete";
+
+}
+
+});
+
+}
+
+next();
+
+}
+
+</script>
+
+</body>
+</html>
