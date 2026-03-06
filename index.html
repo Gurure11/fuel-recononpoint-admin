@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <!-- QR code generator (lightweight) -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <!-- Google Maps Geocoding API - Using a valid API key -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=places&callback=initMap" async defer></script>
     <style>
         /* All your existing CSS remains exactly the same */
         * {
@@ -71,8 +73,8 @@
             border: 1px solid #ffc107;
             box-shadow: 0 15px 30px -8px #0b2b5c;
             display: flex;
-            align-items: center;
-            gap: 20px;
+            flex-direction: column;
+            align-items: stretch;
             z-index: 1000;
             font-weight: 600;
             color: #0b1f3b;
@@ -398,8 +400,6 @@
             background-color: green;
         }
     </style>
-    <!-- Google Maps Geocoding API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=places&callback=initMap" async defer></script>
 </head>
 <body>
     <!-- Floating WhatsApp button -->
@@ -411,10 +411,13 @@
     </a>
 
     <!-- Modified counter pill: embedded counter12 + "Incidents 2026" below -->
-    <div class="counter-pill" style="flex-direction: column; align-items: stretch; padding: 12px 20px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <!-- original counter12 code exactly as given -->
-            <div align=center><a href='https://www.counter12.com'><img src='https://www.counter12.com/img-3yZY1ZZwa29AB3dd-40.gif' border='0' alt='counter'></a><script type='text/javascript' src='https://www.counter12.com/ad.js?id=3yZY1ZZwa29AB3dd'></script></div>
+    <div class="counter-pill">
+        <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
+            <!-- Fixed counter12 implementation -->
+            <div align="center">
+                <a href='https://www.counter12.com'><img src='https://www.counter12.com/img-3yZY1ZZwa29AB3dd-40.gif' border='0' alt='counter'></a>
+                <script type='text/javascript' src='https://www.counter12.com/ad.js?id=3yZY1ZZwa29AB3dd'></script>
+            </div>
         </div>
         <!-- label below: Incidents 2026 -->
         <div class="incident-label"><i class="fas fa-car-crash"></i> App Visit 2026</div>
@@ -472,7 +475,7 @@
             <a class="take" href="contacts.html">Vehicle Handover</a><br>
             <small>click above if you are swapping vehicles</small><br><br>
         </div>
-<br><br>
+
         <!-- FORM STARTS -->
         <form id="accidentForm" class="form-grid">
             <div class="datetime-row">
@@ -628,9 +631,10 @@
     <script>
         (function() {
             // ========== CONFIGURATION - REPLACE THESE VALUES ==========
-            // Google Apps Script Web App URL - REPLACE WITH YOUR ACTUAL URL
-            // Format: https://script.google.com/macros/s/AKfycbx4SoTlyTCO9wNBybzxPzcI60_lML3G2S-WKtM-1XCDjtedNsFVZZsaDn2_fE4xO-_Z/exec
-            const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4SoTlyTCO9wNBybzxPzcI60_lML3G2S-WKtM-1XCDjtedNsFVZZsaDn2_fE4xO-_Z/exec'; // <-- REPLACE THIS
+            // Google Apps Script Web App URL - YOU NEED TO REPLACE THIS WITH YOUR ACTUAL URL
+            // After deploying your Google Apps Script, you'll get a URL like:
+            // https://script.google.com/macros/s/AKfycbz6dLNv6LzK0WJYqvQqJqF0xQ/exec
+            const GAS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'; // <-- REPLACE THIS WITH YOUR ACTUAL URL
             
             // Google Sheet ID - Already provided
             const SHEET_ID = '1vhtaNNmY-YsyDiaA2IFodoBYdQsEcL09F7BgMJo4utI';
@@ -651,9 +655,8 @@
                 let storedYear = parseInt(localStorage.getItem('onpoint_year') || currentYear);
                 
                 // Check if we need to reset counters based on time passage
-                // But DON'T modify them here - just return current values with reset flags
                 if (storedYear !== currentYear) {
-                    // Year changed - yearly counter should reset, but we'll do that in increment function
+                    // Year changed - yearly counter should reset
                     return { monthly: 0, yearly: 0, shouldResetMonthly: true, shouldResetYearly: true, currentMonth, currentYear };
                 } else if (storedMonth !== currentMonth) {
                     // Month changed - monthly counter should reset
@@ -916,8 +919,8 @@
                 if (!validateForm(data)) return;
 
                 // Check if GAS URL is configured
-                if (GAS_URL.includes('https://script.google.com/macros/s/AKfycbx4SoTlyTCO9wNBybzxPzcI60_lML3G2S-WKtM-1XCDjtedNsFVZZsaDn2_fE4xO-_Z/exec')) {
-                    alert('⚠️ Please configure your Google Apps Script URL in the code.\n\nReplace the GAS_URL variable with your actual web app URL.');
+                if (GAS_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                    alert('⚠️ Please configure your Google Apps Script URL in the code.\n\n1. Deploy your Google Apps Script as a Web App\n2. Copy the URL\n3. Replace "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE" with your actual URL');
                     return;
                 }
 
