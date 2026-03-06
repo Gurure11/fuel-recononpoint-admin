@@ -634,7 +634,7 @@
             // Google Apps Script Web App URL - YOU NEED TO REPLACE THIS WITH YOUR ACTUAL URL
             // After deploying your Google Apps Script, you'll get a URL like:
             // https://script.google.com/macros/s/AKfycbz6dLNv6LzK0WJYqvQqJqF0xQ/exec
-            const GAS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'; // <-- REPLACE THIS WITH YOUR ACTUAL URL
+            const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4SoTlyTCO9wNBybzxPzcI60_lML3G2S-WKtM-1XCDjtedNsFVZZsaDn2_fE4xO-_Z/exec'; // <-- REPLACE THIS WITH YOUR ACTUAL URL
             
             // Google Sheet ID - Already provided
             const SHEET_ID = '1vhtaNNmY-YsyDiaA2IFodoBYdQsEcL09F7BgMJo4utI';
@@ -919,7 +919,7 @@
                 if (!validateForm(data)) return;
 
                 // Check if GAS URL is configured
-                if (GAS_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                if (GAS_URL === 'https://script.google.com/macros/s/AKfycbx4SoTlyTCO9wNBybzxPzcI60_lML3G2S-WKtM-1XCDjtedNsFVZZsaDn2_fE4xO-_Z/exec') {
                     alert('⚠️ Please configure your Google Apps Script URL in the code.\n\n1. Deploy your Google Apps Script as a Web App\n2. Copy the URL\n3. Replace "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE" with your actual URL');
                     return;
                 }
