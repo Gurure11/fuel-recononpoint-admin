@@ -626,8 +626,9 @@
     </div>
 
     <script>
-        // Google Apps Script Web App URL - REPLACE WITH YOUR DEPLOYED URL
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzYRHUaAu33qcinFv5oC1sQuVB7cdmqJ2Zk1I9WT2cP_oh9FzZ6BLAVDPLUxtpdUvK0/execL';
+        // IMPORTANT: You need to create and deploy a Google Apps Script web app
+        // and replace this URL with your actual deployed URL
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzYRHUaAu33qcinFv5oC1sQuVB7cdmqJ2Zk1I9WT2cP_oh9FzZ6BLAVDPLUxtpdUvK0/exec';
         
         // Set default date and time
         document.addEventListener('DOMContentLoaded', function() {
@@ -746,20 +747,48 @@
                     formData: formData,
                     photos: photos,
                     driveFolderId: '13BuqOSAdUlfZJIm36A_R3mbF4HwHCfZY', // Your Google Drive folder ID
-                    sheetId: '13BuqOSAdUlfZJIm36A_R3mbF4HwHCfZY?usp=drive_link' // Your Google Sheet ID
+                    sheetId: '13BuqOSAdUlfZJIm36A_R3mbF4HwHCfZY' // Your Google Sheet ID (just the ID, not the full URL)
                 };
 
                 document.getElementById('loadingText').textContent = 'Saving to Google Drive and Sheets...';
 
-                // Send to Google Apps Script
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Important for Google Apps Script
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
+                // Use JSONP approach instead of fetch with no-cors
+                const script = document.createElement('script');
+                const callbackName = 'callback_' + Date.now();
+                
+                // Create a promise that will be resolved by the JSONP callback
+                const jsonpPromise = new Promise((resolve, reject) => {
+                    // Set timeout for the request
+                    const timeout = setTimeout(() => {
+                        cleanup();
+                        reject(new Error('Request timeout'));
+                    }, 30000);
+
+                    // Define callback function
+                    window[callbackName] = function(response) {
+                        clearTimeout(timeout);
+                        cleanup();
+                        resolve(response);
+                    };
+
+                    // Cleanup function
+                    function cleanup() {
+                        delete window[callbackName];
+                        document.body.removeChild(script);
+                    }
+
+                    // Create and send JSONP request
+                    script.src = GAS_URL + '?callback=' + callbackName + '&data=' + encodeURIComponent(JSON.stringify(payload));
+                    script.onerror = function() {
+                        clearTimeout(timeout);
+                        cleanup();
+                        reject(new Error('Network error'));
+                    };
+                    document.body.appendChild(script);
                 });
+
+                // Wait for the JSONP response
+                const response = await jsonpPromise;
 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
@@ -771,7 +800,7 @@
                 successMsg.style.display = 'block';
                 
                 // Log for debugging
-                console.log('Form submitted successfully to Google Apps Script');
+                console.log('Form submitted successfully:', response);
 
                 // Auto-hide success message after 5 seconds
                 setTimeout(() => {
