@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Vehicle Handover/Takeover | OnPoint OnTime Fleet</title>
     <style>
+        /* === STYLES (unchanged, kept exactly as provided) === */
         * {
             margin: 0;
             padding: 0;
@@ -373,10 +374,7 @@
         <div class="success-message" id="successMessage">
             ✅ Form submitted successfully! A copy has been sent to fleet@onpointontime.co.za
         </div>
-
-        <div class="error-message" id="errorMessage" style="display: none;">
-            ❌ Error submitting form. Please try again.
-        </div>
+        <div class="error-message" id="errorMessage" style="display: none;">❌ Submission failed. Please try again.</div>
 
         <form id="vehicleForm">
             <!-- Employee Information Section -->
@@ -599,8 +597,9 @@
     </div>
 
     <script>
-        // IMPORTANT: Replace this with your actual Google Apps Script URL
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFVII9HFxJ6ODBH5S-mAVlaFz6isIbmI-DBMfXC3wDG1-3FvPlZ3z_tFupiXQayl-1/exec';
+        // === GOOGLE APPS SCRIPT WEB APP URL (DEPLOY YOUR SCRIPT THERE) ===
+        // IMPORTANT: Replace with your actual web app URL after deploying the Apps Script.
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzVJ-5n36kQm2a2R3_HmBsS-_KzT0pI1rJgNQpM6Wf3Z-tg9sT-7x_S9yUzD_ehB8yl/exec'; // Example URL – YOU MUST REPLACE THIS
 
         // Set default date and time
         document.addEventListener('DOMContentLoaded', function() {
@@ -642,115 +641,6 @@
             }
         });
 
-        // Convert files to base64 for sending to Google Apps Script
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        // Form submission
-        document.getElementById('vehicleForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // Validate required fields
-            const requiredFields = ['employeeName', 'employeeNumber', 'idNumber', 'vehicleReg', 'mileage', 'handoverDate', 'handoverTime'];
-            for(let field of requiredFields) {
-                if(!document.getElementById(field).value) {
-                    alert(`Please fill in all required fields`);
-                    return;
-                }
-            }
-
-            // Show loading overlay
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('errorMessage').style.display = 'none';
-
-            try {
-                // Collect form data
-                const formData = {
-                    employeeName: document.getElementById('employeeName').value,
-                    employeeNumber: document.getElementById('employeeNumber').value,
-                    idNumber: document.getElementById('idNumber').value,
-                    department: document.getElementById('department').value,
-                    vehicleReg: document.getElementById('vehicleReg').value,
-                    vehicleModel: document.getElementById('vehicleModel').value,
-                    mileage: document.getElementById('mileage').value,
-                    serviceDue: document.getElementById('serviceDue').value,
-                    handoverType: document.querySelector('input[name="handoverType"]:checked')?.value || 'Handover',
-                    fuelLevel: document.querySelector('input[name="fuelLevel"]:checked')?.value || '1/2',
-                    checklist: Array.from(document.querySelectorAll('input[name="checklist"]:checked')).map(cb => cb.value).join(', '),
-                    abnormalityDesc: document.getElementById('abnormalityDesc').value,
-                    damageLocation: document.getElementById('damageLocation').value,
-                    handoverDate: document.getElementById('handoverDate').value,
-                    handoverTime: document.getElementById('handoverTime').value,
-                    additionalNotes: document.getElementById('additionalNotes').value,
-                    timestamp: new Date().toISOString()
-                };
-
-                // Handle photo uploads
-                const photoFiles = document.getElementById('vehiclePhotos').files;
-                if (photoFiles.length > 0) {
-                    formData.photos = [];
-                    for (let i = 0; i < photoFiles.length; i++) {
-                        const base64 = await fileToBase64(photoFiles[i]);
-                        formData.photos.push({
-                            name: photoFiles[i].name,
-                            type: photoFiles[i].type,
-                            data: base64
-                        });
-                    }
-                }
-
-                // Send data to Google Apps Script
-                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Important for Google Apps Script
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                // Hide loading overlay
-                document.getElementById('loadingOverlay').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
-
-                // Show success message (since we're using no-cors, we assume success)
-                const successMsg = document.getElementById('successMessage');
-                successMsg.style.display = 'block';
-                
-                // Log form data for demo
-                console.log('Form submitted to Google Sheets:', formData);
-
-                // Auto-hide success message after 5 seconds
-                setTimeout(() => {
-                    successMsg.style.display = 'none';
-                }, 5000);
-
-                // Optional: Reset form
-                if(confirm('Form submitted successfully! Would you like to reset the form for another entry?')) {
-                    this.reset();
-                    document.getElementById('handoverDate').value = new Date().toISOString().split('T')[0];
-                    document.getElementById('photoPreview').innerHTML = '';
-                }
-
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                document.getElementById('loadingOverlay').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('errorMessage').style.display = 'block';
-                
-                setTimeout(() => {
-                    document.getElementById('errorMessage').style.display = 'none';
-                }, 5000);
-            }
-        });
-
         // Drag and drop for photo upload (mobile friendly)
         const photoArea = document.getElementById('photoUploadArea');
         photoArea.addEventListener('dragover', (e) => {
@@ -772,7 +662,6 @@
             const files = e.dataTransfer.files;
             if(files.length > 0) {
                 document.getElementById('vehiclePhotos').files = files;
-                // Trigger change event
                 const event = new Event('change', { bubbles: true });
                 document.getElementById('vehiclePhotos').dispatchEvent(event);
             }
@@ -781,9 +670,114 @@
         // Add touch optimization for mobile
         if('ontouchstart' in window) {
             document.querySelectorAll('input, select, textarea').forEach(element => {
-                element.style.fontSize = '16px'; // Prevent zoom on iOS
+                element.style.fontSize = '16px';
             });
         }
+
+        // === FORM SUBMISSION HANDLER: Posts data & images to Google Sheets & Drive via Apps Script ===
+        document.getElementById('vehicleForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Validate required fields
+            const requiredFields = ['employeeName', 'employeeNumber', 'idNumber', 'vehicleReg', 'mileage', 'handoverDate', 'handoverTime'];
+            for(let field of requiredFields) {
+                if(!document.getElementById(field).value.trim()) {
+                    alert(`Please fill in all required fields`);
+                    return;
+                }
+            }
+
+            // Show loading overlay
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                // Prepare text fields as a JSON blob
+                const formData = {
+                    employeeName: document.getElementById('employeeName').value,
+                    employeeNumber: document.getElementById('employeeNumber').value,
+                    idNumber: document.getElementById('idNumber').value,
+                    department: document.getElementById('department').value,
+                    vehicleReg: document.getElementById('vehicleReg').value,
+                    vehicleModel: document.getElementById('vehicleModel').value,
+                    mileage: document.getElementById('mileage').value,
+                    serviceDue: document.getElementById('serviceDue').value,
+                    handoverType: document.querySelector('input[name="handoverType"]:checked')?.value || 'Handover',
+                    fuelLevel: document.querySelector('input[name="fuelLevel"]:checked')?.value || '1/2',
+                    checklist: Array.from(document.querySelectorAll('input[name="checklist"]:checked')).map(cb => cb.value).join(', '),
+                    abnormalityDesc: document.getElementById('abnormalityDesc').value,
+                    damageLocation: document.getElementById('damageLocation').value,
+                    handoverDate: document.getElementById('handoverDate').value,
+                    handoverTime: document.getElementById('handoverTime').value,
+                    additionalNotes: document.getElementById('additionalNotes').value,
+                    // Google Drive folder ID (as provided)
+                    driveFolderId: '13BuqOSAdUlfZJIm36A_R3mbF4HwHCfZY',
+                    // Google Sheet ID (as provided)
+                    sheetId: '1vBDeyPBy3LLYg0EM2OFgceI3deVFhXL2Nr-IpdveZoU',
+                    timestamp: new Date().toISOString()
+                };
+
+                // Build multipart/form-data request to send both JSON and images
+                const payload = new FormData();
+                // Append all text fields as a single JSON string (nested under "metadata")
+                payload.append('metadata', new Blob([JSON.stringify(formData)], { type: 'application/json' }));
+
+                // Append each selected image file
+                const photoInput = document.getElementById('vehiclePhotos');
+                for (let i = 0; i < photoInput.files.length; i++) {
+                    payload.append('photos', photoInput.files[i]);
+                }
+
+                // Send to Google Apps Script
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: payload
+                });
+
+                let result;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    // Handle plain text or error
+                    const text = await response.text();
+                    throw new Error(text || 'Invalid server response');
+                }
+
+                if (result.status === 'success') {
+                    // Show success message
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('errorMessage').style.display = 'none';
+                    
+                    // Log for debugging
+                    console.log('Submission successful:', result);
+
+                    // Auto-hide success message after 5 seconds
+                    setTimeout(() => {
+                        document.getElementById('successMessage').style.display = 'none';
+                    }, 5000);
+
+                    // Optional reset
+                    if(confirm('Form submitted successfully! Would you like to reset the form for another entry?')) {
+                        this.reset();
+                        document.getElementById('handoverDate').value = new Date().toISOString().split('T')[0];
+                        document.getElementById('handoverTime').value = 
+                            `${String(new Date().getHours()).padStart(2,'0')}:${String(new Date().getMinutes()).padStart(2,'0')}`;
+                        document.getElementById('photoPreview').innerHTML = '';
+                    }
+                } else {
+                    throw new Error(result.message || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorMessage').innerText = `❌ Submission failed: ${error.message}`;
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+            }
+        });
     </script>
 </body>
 </html>
