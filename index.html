@@ -1,619 +1,641 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <base target="_top">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  
-  <style>
-    <?!= include('Styles'); ?>
-      
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #f5f7fb;
-    color: #333;
-    line-height: 1.6;
-  }
-
-  .app-container {
-    display: flex;
-    height: 100vh;
-  }
-
-  /* Sidebar Styles */
-  .sidebar {
-    width: 260px;
-    background: linear-gradient(180deg, #2c3e50 0%, #1a2634 100%);
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .sidebar-header {
-    padding: 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .sidebar-header i {
-    font-size: 28px;
-    color: #4CAF50;
-  }
-
-  .sidebar-header h2 {
-    font-size: 18px;
-    font-weight: 600;
-  }
-
-  .sidebar-nav {
-    flex: 1;
-    padding: 20px 0;
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 24px;
-    color: rgba(255, 255, 255, 0.7);
-    text-decoration: none;
-    transition: all 0.3s;
-    border-left: 3px solid transparent;
-  }
-
-  .nav-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-  }
-
-  .nav-item.active {
-    background: rgba(76, 175, 80, 0.2);
-    color: #fff;
-    border-left-color: #4CAF50;
-  }
-
-  .nav-item i {
-    width: 20px;
-    font-size: 16px;
-  }
-
-  .sidebar-footer {
-    padding: 20px 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  .user-info i {
-    font-size: 24px;
-  }
-
-  /* Main Content Styles */
-  .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .top-bar {
-    background: #fff;
-    padding: 16px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  }
-
-  .page-title h1 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #2c3e50;
-  }
-
-  .top-bar-actions {
-    display: flex;
-    gap: 12px;
-  }
-
-  .btn {
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: none;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s;
-  }
-
-  .btn-primary {
-    background: #4CAF50;
-    color: #fff;
-  }
-
-  .btn-primary:hover {
-    background: #45a049;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
-  }
-
-  .btn-icon {
-    padding: 8px;
-    background: #f5f7fb;
-    color: #666;
-  }
-
-  .btn-icon:hover {
-    background: #e0e4e9;
-    color: #333;
-  }
-
-  .content-area {
-    flex: 1;
-    padding: 24px;
-    overflow-y: auto;
-  }
-
-  /* Dashboard Cards */
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
-    margin-bottom: 24px;
-  }
-
-  .stat-card {
-    background: #fff;
-    border-radius: 10px;
-    padding: 24px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-    transition: all 0.3s;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  }
-
-  .stat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-
-  .stat-header i {
-    font-size: 32px;
-    color: #4CAF50;
-  }
-
-  .stat-value {
-    font-size: 36px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 8px;
-  }
-
-  .stat-label {
-    color: #666;
-    font-size: 14px;
-  }
-
-  /* Table Styles */
-  .data-table-container {
-    background: #fff;
-    border-radius: 10px;
-    padding: 24px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-    overflow-x: auto;
-  }
-
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .data-table th {
-    text-align: left;
-    padding: 12px;
-    background: #f8f9fa;
-    font-weight: 600;
-    color: #2c3e50;
-    border-bottom: 2px solid #dee2e6;
-  }
-
-  .data-table td {
-    padding: 12px;
-    border-bottom: 1px solid #dee2e6;
-    color: #666;
-  }
-
-  .data-table tr:hover {
-    background: #f8f9fa;
-  }
-
-  .data-table tr:last-child td {
-    border-bottom: none;
-  }
-
-  /* Badge Styles */
-  .badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .badge-success {
-    background: #e8f5e9;
-    color: #4CAF50;
-  }
-
-  .badge-warning {
-    background: #fff3e0;
-    color: #ff9800;
-  }
-
-  .badge-danger {
-    background: #ffebee;
-    color: #f44336;
-  }
-
-  /* Modal Styles */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-  }
-
-  .modal-content {
-    background: #fff;
-    margin: 50px auto;
-    width: 90%;
-    max-width: 500px;
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  }
-
-  .modal-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid #dee2e6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .modal-header h2 {
-    font-size: 20px;
-    color: #2c3e50;
-  }
-
-  .close {
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-  }
-
-  .close:hover {
-    color: #333;
-  }
-
-  .modal-body {
-    padding: 24px;
-  }
-
-  /* Form Styles */
-  .form-group {
-    margin-bottom: 16px;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #2c3e50;
-  }
-
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 14px;
-  }
-
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #4CAF50;
-  }
-
-  /* Loading Spinner */
-  .loading-spinner {
-    text-align: center;
-    padding: 50px;
-    color: #666;
-  }
-
-  .loading-spinner i {
-    margin-right: 8px;
-  }
-
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .sidebar {
-      width: 70px;
-    }
-    
-    .sidebar-header h2,
-    .nav-item span,
-    .user-info span {
-      display: none;
-    }
-    
-    .sidebar-header {
-      justify-content: center;
-    }
-    
-    .nav-item {
-      justify-content: center;
-      padding: 12px;
-    }
-    
-    .nav-item i {
-      margin: 0;
-    }
-    
-    .dashboard-grid {
-      grid-template-columns: 1fr;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onpoint Fleet · Incident Dashboard</title>
+    <!-- Font Awesome 5 (professional icons) -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <!-- Google Font (Inter clean) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
-  /* Skeleton Loading Animation */
-  .skeleton {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
-  }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  @keyframes loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f4f7fc;
+            color: #1e293b;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-  .skeleton-line {
-    height: 16px;
-    background: #e0e0e0;
-    margin: 10px 0;
-    border-radius: 4px;
-  }
+        /* header / top navigation */
+        .dashboard-header {
+            background: #ffffff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.05);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e9edf4;
+        }
 
-  .skeleton-row {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-  }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
 
-  .loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 400px;
-  }
+        .logo-icon {
+            background: #1e3a8a;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+        }
 
-  .loading-spinner {
-    text-align: center;
-  }
+        .logo-text h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #0f182a;
+        }
 
-  .loading-spinner i {
-    font-size: 48px;
-    color: #4CAF50;
-    margin-bottom: 16px;
-  }
+        .logo-text span {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #5e6f8d;
+            background: #f0f4fa;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            margin-left: 0.5rem;
+        }
 
-  .loading-spinner p {
-    color: #666;
-    font-size: 16px;
-  }
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
 
-  .error-container {
-    text-align: center;
-    padding: 50px;
-    background: #ffebee;
-    border-radius: 8px;
-    color: #f44336;
-  }
+        .home-btn, .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
 
-  .error-container i {
-    font-size: 48px;
-    margin-bottom: 16px;
-  }
+        .home-btn {
+            background: #f1f5f9;
+            color: #334155;
+            border-color: #dbe0e8;
+        }
 
-  .error-container h3 {
-    margin-bottom: 16px;
-  }
+        .home-btn i {
+            color: #3b4e6b;
+        }
 
-  .pagination {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-  }
+        .home-btn:hover {
+            background: #e6ecf3;
+        }
 
-  .page-numbers {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-  }
+        .logout-btn {
+            background: #ffffff;
+            color: #b91c1c;
+            border-color: #ffcfcf;
+        }
 
-  .page-dots {
-    padding: 0 5px;
-    color: #666;
-  }
+        .logout-btn i {
+            color: #b91c1c;
+        }
 
-  .btn-icon:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+        .logout-btn:hover {
+            background: #fee2e2;
+            border-color: #fecaca;
+        }
 
-  .btn-icon.active {
-    background: #4CAF50;
-    color: white;
-  }
+        /* main container */
+        .main {
+            flex: 1;
+            padding: 2rem 2rem 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
 
-  /* Virtual scroll improvements */
-  #table-container {
-    scrollbar-width: thin;
-    scrollbar-color: #4CAF50 #f0f0f0;
-  }
+        /* metrics cards */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
 
-  #table-container::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
+        .metric-card {
+            background: white;
+            padding: 1.25rem 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 20, 40, 0.03);
+            border: 1px solid #edf2f9;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
 
-  #table-container::-webkit-scrollbar-track {
-    background: #f0f0f0;
-    border-radius: 4px;
-  }
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            background: #e9effa;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e4f8a;
+            font-size: 1.6rem;
+        }
 
-  #table-container::-webkit-scrollbar-thumb {
-    background: #4CAF50;
-    border-radius: 4px;
-  }
+        .metric-content h3 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #59748f;
+            margin-bottom: 0.25rem;
+        }
 
-  #table-container::-webkit-scrollbar-thumb:hover {
-    background: #45a049;
-  }
+        .metric-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0a1a32;
+            line-height: 1.2;
+        }
 
-  /* Responsive table */
-  @media (max-width: 768px) {
-    .data-table {
-      font-size: 14px;
-    }
-    
-    .data-table th,
-    .data-table td {
-      padding: 8px 4px;
-    }
-    
-    .pagination {
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-  }
-</style>
+        /* filters row */
+        .filters-panel {
+            background: white;
+            border-radius: 18px;
+            padding: 1rem 1.5rem;
+            border: 1px solid #eef3f9;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
 
- 
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #416a8d;
+            background: #ecf3fb;
+            padding: 0.35rem 1rem;
+            border-radius: 30px;
+        }
+
+        .filter-select {
+            background: white;
+            border: 1px solid #d7e2ed;
+            padding: 0.45rem 2rem 0.45rem 1rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1e2f44;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233b5e8b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.8rem center;
+            background-size: 14px;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #2f5b9c;
+        }
+
+        .last-updated {
+            margin-left: auto;
+            font-size: 0.8rem;
+            color: #6f8dae;
+            background: #f1f7ff;
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            white-space: nowrap;
+        }
+
+        /* table card */
+        .table-card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #e6eefc;
+            box-shadow: 0 8px 20px -6px rgba(0, 45, 80, 0.05);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .table-header {
+            padding: 1.2rem 1.8rem;
+            background: #f9fcff;
+            border-bottom: 1px solid #deeaf5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #132b45;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge-rows {
+            background: #d9e9ff;
+            color: #15477c;
+            padding: 0.25rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 460px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #b6cbe0 #ecf3fa;
+        }
+
+        .dashboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 1000px;
+        }
+
+        .dashboard-table th {
+            background: #f2f8ff;
+            color: #1f3c68;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 1rem 1.2rem;
+            text-align: left;
+            border-bottom: 1px solid #d2e2f5;
+            position: sticky;
+            top: 0;
+            background: #f2f8ff;
+            z-index: 10;
+        }
+
+        .dashboard-table td {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid #eef3fc;
+            color: #1b3149;
+            font-weight: 400;
+        }
+
+        .dashboard-table tbody tr:hover {
+            background-color: #f6fafe;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.9rem;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        .status-active { background: #e0f2e6; color: #1b6d4b; }
+        .status-pending { background: #fff3d8; color: #aa5f1e; }
+        .status-resolved { background: #ddeeff; color: #134b8e; }
+        .status-critical { background: #ffe5e5; color: #b12e2e; }
+
+        .footer-note {
+            text-align: right;
+            font-size: 0.75rem;
+            color: #8ba0bc;
+            padding: 0.5rem 0;
+        }
+
+        /* loading overlay */
+        .loader-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            background: white;
+            border-radius: 30px;
+            border: 1px solid #eef3f9;
+        }
+
+        .spinner {
+            border: 3px solid #e2ecfe;
+            border-top: 3px solid #1f5090;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .hidden { display: none; }
+
+    </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <i class="fas fa-chart-line"></i>
-        <h2>Data Dashboard</h2>
-      </div>
-      
-      <nav class="sidebar-nav">
-        <a href="#" class="nav-item active" onclick="loadDashboard()">
-          <i class="fas fa-home"></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="#" class="nav-item" onclick="loadDataView()">
-          <i class="fas fa-table"></i>
-          <span>Data View</span>
-        </a>
-        <a href="#" class="nav-item" onclick="loadAnalytics()">
-          <i class="fas fa-chart-bar"></i>
-          <span>Analytics</span>
-        </a>
-        <a href="#" class="nav-item" onclick="loadSettings()">
-          <i class="fas fa-cog"></i>
-          <span>Settings</span>
-        </a>
-      </nav>
-      
-      <div class="sidebar-footer">
-        <div class="user-info">
-          <i class="fas fa-user-circle"></i>
-          <span>User Name</span>
+    <header class="dashboard-header">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-truck"></i></div>
+            <div class="logo-text">
+                <h1>Onpoint Fleet <span>Incident report</span></h1>
+            </div>
         </div>
-      </div>
+        <div class="header-actions">
+            <a href="index.html" class="home-btn" id="homeBtn"><i class="fas fa-home"></i> Home</a>
+            <a href="index.html" class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Log out</a>
+        </div>
+    </header>
+
+    <div class="main" id="dashboardMain">
+        <!-- dynamic content will show after fetch -->
+        <div id="loaderContainer" class="loader-wrapper">
+            <div class="spinner"></div>
+        </div>
+
+        <div id="dashboardContent" class="hidden">
+            <!-- metric cards injected -->
+            <div class="metric-grid" id="metricCards"></div>
+
+            <!-- filters & info -->
+            <div class="filters-panel">
+                <div class="filter-group">
+                    <span class="filter-label"><i class="fas fa-filter" style="margin-right: 4px;"></i>Status</span>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="all">All incidents</option>
+                        <option value="Active">Active</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label"><i class="fas fa-calendar-alt"></i>Vehicle</span>
+                    <select id="vehicleFilter" class="filter-select">
+                        <option value="all">All vehicles</option>
+                    </select>
+                </div>
+                <div class="last-updated" id="lastUpdated"><i class="far fa-clock"></i> loading ...</div>
+            </div>
+
+            <!-- table card -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h2><i class="fas fa-clipboard-list" style="color:#1e4f8a;"></i> Fleet incidents</h2>
+                    <div class="badge-rows" id="rowCounter">0 entries</div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vehicle</th>
+                                <th>Incident</th>
+                                <th>Driver</th>
+                                <th>Status</th>
+                                <th>Location</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="footer-note">
+                <i class="fas fa-sync-alt" style="margin-right: 6px;"></i> live from Google Sheets · Onpoint fleet
+            </div>
+        </div>
     </div>
-    
-    <!-- Main Content -->
-    <div class="main-content">
-      <!-- Top Bar -->
-      <div class="top-bar">
-        <div class="page-title">
-          <h1>Dashboard</h1>
-        </div>
-        <div class="top-bar-actions">
-          <button class="btn btn-icon" onclick="refreshData()">
-            <i class="fas fa-sync-alt"></i>
-          </button>
-          <button class="btn btn-icon" onclick="exportData()">
-            <i class="fas fa-download"></i>
-          </button>
-          <button class="btn btn-primary" onclick="showAddDataModal()">
-            <i class="fas fa-plus"></i> Add Data
-          </button>
-        </div>
-      </div>
-      
-      <!-- Content Area -->
-      <div id="content-area" class="content-area">
-        <!-- Dashboard content will be loaded here -->
-        <div class="loading-spinner" id="loading-spinner">
-          <i class="fas fa-spinner fa-spin"></i> Loading...
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Modals -->
-  <div id="dataModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Add New Data</h2>
-        <span class="close" onclick="closeModal()">&times;</span>
-      </div>
-      <div class="modal-body" id="modal-body">
-        <!-- Modal content will be loaded here -->
-      </div>
-    </div>
-  </div>
-  
-  <?!= include('Script'); ?>
+
+    <script>
+        (function() {
+            // --- CONFIGURATION ---
+            // Google Apps Script deployment URL (replace with your own)
+            // IMPORTANT: you must deploy as web app with access "Anyone" or use your own.
+            // The endpoint must accept GET and return JSON from sheet.
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzG_7FIJs3jxq_7b7bM6wVcPJbqqe57URx1h9LQYx1mHdOGL-2JX7vTIfq-3eWQdEr3/exec'; // Example placeholder – REPLACE!
+            // For demo / offline, we provide fallback because actual endpoint must be set.
+            // In production, use real sheet ID: 1vhtaNNmY-YsyDiaA2IFodoBYdQsEcL09F7BgMJo4utI
+            // Sheet name: Onpoint Incident Fleet Report
+
+            // ----- FALLBACK DATA (for demonstration, if script url not replaced or CORS) -----
+            const FALLBACK_DATA = [
+                { date: "2025-03-01", vehicle: "Truck A7", incident: "Engine overheating", driver: "R. Miller", status: "Active", location: "Highway 101, mi 23", notes: "Needs diagnostics" },
+                { date: "2025-03-02", vehicle: "Van E12", incident: "Flat tire", driver: "S. Chen", status: "Resolved", location: "Depot B", notes: "Tire replaced" },
+                { date: "2025-03-02", vehicle: "Truck B4", incident: "Brake pad worn", driver: "J. Wiley", status: "Pending", location: "Sparks garage", notes: "Awaiting parts" },
+                { date: "2025-03-03", vehicle: "F150-9", incident: "Check engine light", driver: "L. Evans", status: "Active", location: "I-80 / exit 12", notes: "Code P0420" },
+                { date: "2025-03-03", vehicle: "Truck A7", incident: "Coolant leak", driver: "R. Miller", status: "Critical", location: "Nevada depot", notes: "Possible radiator" },
+                { date: "2025-03-04", vehicle: "Sprinter 5", incident: "Electrical fault", driver: "M. Okafor", status: "Pending", location: "SLC yard", notes: "Battery drain" },
+                { date: "2025-03-05", vehicle: "Truck C11", incident: "Transmission slip", driver: "T. Hughes", status: "Active", location: "Mountain pass", notes: "Towed to shop" }
+            ];
+            
+            // ----- GLOBAL VARS -----
+            let fullDataset = [];                // raw data from sheet
+            let filteredData = [];
+            let uniqueVehicles = new Set();
+
+            // DOM elements
+            const loader = document.getElementById('loaderContainer');
+            const dashboard = document.getElementById('dashboardContent');
+            const metricDiv = document.getElementById('metricCards');
+            const tableBody = document.getElementById('tableBody');
+            const statusFilterEl = document.getElementById('statusFilter');
+            const vehicleFilterEl = document.getElementById('vehicleFilter');
+            const lastUpdatedSpan = document.getElementById('lastUpdated');
+            const rowCounter = document.getElementById('rowCounter');
+
+            // Helper: format date 
+            function formatDate(d) { return d; } // already string
+
+            // Update metrics & filters
+            function refreshDashboard() {
+                // apply filters
+                const statusVal = statusFilterEl.value;
+                const vehicleVal = vehicleFilterEl.value;
+
+                filteredData = fullDataset.filter(row => {
+                    if (statusVal !== 'all' && row.status !== statusVal) return false;
+                    if (vehicleVal !== 'all' && row.vehicle !== vehicleVal) return false;
+                    return true;
+                });
+
+                // render table
+                renderTable(filteredData);
+                updateMetrics(filteredData);
+                updateVehicleFilterOptions(); // (in case new vehicles)
+                rowCounter.innerText = filteredData.length + ' entries';
+            }
+
+            // update metrics cards
+            function updateMetrics(data) {
+                const total = data.length;
+                const active = data.filter(d => d.status === 'Active').length;
+                const pending = data.filter(d => d.status === 'Pending').length;
+                const resolved = data.filter(d => d.status === 'Resolved').length;
+                const critical = data.filter(d => d.status === 'Critical').length;
+
+                metricDiv.innerHTML = `
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="metric-content"><h3>Total incidents</h3><div class="metric-number">${total}</div></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="fas fa-bolt" style="color:#b65817;"></i></div>
+                        <div class="metric-content"><h3>Active</h3><div class="metric-number">${active}</div></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="fas fa-hourglass-half" style="color:#a06f1f;"></i></div>
+                        <div class="metric-content"><h3>Pending</h3><div class="metric-number">${pending}</div></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="fas fa-check-circle" style="color:#1f8555;"></i></div>
+                        <div class="metric-content"><h3>Resolved</h3><div class="metric-number">${resolved}</div></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon"><i class="fas fa-fire" style="color:#b42f2f;"></i></div>
+                        <div class="metric-content"><h3>Critical</h3><div class="metric-number">${critical}</div></div>
+                    </div>
+                `;
+            }
+
+            // render table rows
+            function renderTable(data) {
+                if (!data.length) {
+                    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:3rem; color:#7a8fa5;"><i class="fas fa-database" style="margin-right:8px;"></i>No incidents match the filters</td></tr>`;
+                    return;
+                }
+                let html = '';
+                data.forEach(row => {
+                    let statusClass = 'status-active';
+                    if (row.status === 'Pending') statusClass = 'status-pending';
+                    else if (row.status === 'Resolved') statusClass = 'status-resolved';
+                    else if (row.status === 'Critical') statusClass = 'status-critical';
+                    else statusClass = 'status-active';
+
+                    html += `<tr>
+                        <td>${row.date || '—'}</td>
+                        <td><strong>${row.vehicle || '—'}</strong></td>
+                        <td>${row.incident || '—'}</td>
+                        <td>${row.driver || '—'}</td>
+                        <td><span class="status-badge ${statusClass}">${row.status || '—'}</span></td>
+                        <td>${row.location || '—'}</td>
+                        <td>${row.notes || '—'}</td>
+                    </tr>`;
+                });
+                tableBody.innerHTML = html;
+            }
+
+            // rebuild vehicle dropdown (unique)
+            function updateVehicleFilterOptions() {
+                const vehicles = [...new Set(fullDataset.map(r => r.vehicle).filter(Boolean))].sort();
+                let options = '<option value="all">All vehicles</option>';
+                vehicles.forEach(v => options += `<option value="${v}">${v}</option>`);
+                vehicleFilterEl.innerHTML = options;
+            }
+
+            // load data from apps script (or fallback)
+            function loadSheetData() {
+                loader.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+
+                // use fetch with timeout
+                Promise.race([
+                    fetch(APPS_SCRIPT_URL, { method: 'GET', mode: 'cors' })
+                        .then(res => res.json())
+                        .catch(err => { throw new Error('Fetch failed'); }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
+                ])
+                .then(data => {
+                    if (data && Array.isArray(data)) {
+                        fullDataset = data;
+                    } else if (data && data.data && Array.isArray(data.data)) {
+                        fullDataset = data.data;   // if wrapped
+                    } else {
+                        console.warn('Unexpected format, using fallback');
+                        fullDataset = FALLBACK_DATA;
+                    }
+                    processData();
+                })
+                .catch(error => {
+                    console.warn('Using fallback data (apps script not reachable)', error);
+                    fullDataset = FALLBACK_DATA;
+                    processData();
+                });
+            }
+
+            function processData() {
+                // ensure fields exist
+                fullDataset = fullDataset.map(r => ({
+                    date: r.date || r.Date || '',
+                    vehicle: r.vehicle || r.Vehicle || '',
+                    incident: r.incident || r.Incident || r.description || '',
+                    driver: r.driver || r.Driver || '',
+                    status: r.status || r.Status || 'Active',
+                    location: r.location || r.Location || '',
+                    notes: r.notes || r.Notes || ''
+                }));
+                // set last updated timestamp
+                const now = new Date();
+                lastUpdatedSpan.innerHTML = `<i class="far fa-clock"></i> updated ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+                // initial filter & UI
+                updateVehicleFilterOptions();
+                refreshDashboard();
+                loader.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+            }
+
+            // event listeners
+            statusFilterEl.addEventListener('change', refreshDashboard);
+            vehicleFilterEl.addEventListener('change', refreshDashboard);
+
+            // Logout and Home: both redirect to index.html (already in href)
+            // but we can add confirm or just let default.
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                // optional: you could add a small logout message but keep simple
+                // we let browser navigate to index.html
+            });
+            document.getElementById('homeBtn').addEventListener('click', (e) => {
+                // same behaviour, goes to index.html
+            });
+
+            // start loading
+            loadSheetData();
+
+            // for extra speed, we also could store in session, but fine.
+        })();
+    </script>
+    <!-- Important: replace APPS_SCRIPT_URL with your actual deployed URL -->
+    <!-- note: sheet ID 1vhtaNNmY-YsyDiaA2IFodoBYdQsEcL09F7BgMJo4utI is hardcoded in script if you build your own endpoint -->
 </body>
 </html>
