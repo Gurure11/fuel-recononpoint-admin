@@ -1,4 +1,4 @@
-const API_URL = "PASTE_YOUR_GOOGLE_SCRIPT_URL_HERE";
+const API_URL = "https://script.google.com/macros/s/AKfycbzf61emivheEIeZ9eYFD0Z9IKVrn53QiSSTFnq6MpwvvEv0XP1Y5_TZQlwpZv12ZOyx/exec";
 
 let reports = [];
 
