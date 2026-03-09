@@ -162,6 +162,7 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            flex-wrap: wrap;
         }
 
         .table-container {
@@ -253,26 +254,15 @@
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
         }
 
-        @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .container {
-                padding: 0 1rem;
-            }
-            
-            .summary-cards {
-                grid-template-columns: 1fr;
-            }
-            
-            .nav-buttons {
-                justify-content: center;
-            }
+        .toolbar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        /* Export button styles */
         .export-btn {
             background-color: #28a745;
             color: white;
@@ -292,14 +282,29 @@
             transform: translateY(-2px);
         }
 
-        /* Toolbar styles */
-        .toolbar {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
+        .retry-btn {
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            margin-left: 1rem;
+        }
+
+        .retry-btn:hover {
+            background-color: #e0a800;
+        }
+
+        .connection-status {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            background-color: #fff3cd;
+            color: #856404;
+            display: none;
         }
     </style>
 </head>
@@ -310,7 +315,7 @@
             <span>Vehicle Fuel Dashboard</span>
         </div>
         <div class="nav-buttons">
-            <a href="https://script.google.com/macros/s/AKfycby5_H_pe9EW7mheqxR_RrNKMKnOc1y8GRhJ_DYrSE8ReNZGC1bs4IyIwugJJgh_FjYn/exec" class="home-btn">
+            <a href="#" onclick="window.location.reload()" class="home-btn">
                 <span>🏠</span> Home
             </a>
             <button class="refresh-btn" onclick="loadData()">
@@ -322,6 +327,10 @@
     <div class="container">
         <div id="summary" class="summary-cards">
             <!-- Summary cards will be inserted here -->
+        </div>
+
+        <div id="connectionStatus" class="connection-status">
+            ⚡ Using google.script.run for direct communication
         </div>
 
         <div class="toolbar">
@@ -341,6 +350,7 @@
         <div id="error" class="error-message" style="display: none;">
             <span>⚠️</span>
             <span id="errorText"></span>
+            <button class="retry-btn" onclick="loadData()">Retry</button>
         </div>
 
         <div id="tableContainer" class="table-container" style="display: none;">
@@ -361,9 +371,6 @@
     </div>
 
     <script>
-        // Your Google Apps Script Web App URL
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5_H_pe9EW7mheqxR_RrNKMKnOc1y8GRhJ_DYrSE8ReNZGC1bs4IyIwugJJgh_FjYn/exec';
-        
         // Store the original data for filtering
         let originalData = [];
         let originalHeaders = [];
@@ -378,16 +385,18 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('tableContainer').style.display = 'none';
             document.getElementById('error').style.display = 'none';
+            document.getElementById('connectionStatus').style.display = 'block';
             
-            // Fetch data from Apps Script URL
-            fetch(APPS_SCRIPT_URL)
-                .then(response => response.json())
-                .then(data => {
-                    displayData(data);
-                })
-                .catch(error => {
-                    displayError(error.message);
-                });
+            try {
+                // Use google.script.run to call the Apps Script function
+                google.script.run
+                    .withSuccessHandler(displayData)
+                    .withFailureHandler(displayError)
+                    .getFuelData();
+            } catch (e) {
+                // If google.script.run is not available, show error
+                displayError('Google Apps Script connection not available. Make sure this HTML is served from Apps Script.');
+            }
         }
 
         function displayData(result) {
@@ -416,6 +425,7 @@
 
             // Show table
             document.getElementById('tableContainer').style.display = 'block';
+            document.getElementById('connectionStatus').style.display = 'none';
         }
 
         function displaySummary(summary) {
@@ -435,11 +445,11 @@
                 </div>
                 <div class="card">
                     <div class="card-title">Total Cost</div>
-                    <div class="card-value">$${Number(summary.totalCost).toLocaleString()}</div>
+                    <div class="card-value">$${Number(summary.totalCost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                 </div>
                 <div class="card">
                     <div class="card-title">Lubrication Cost</div>
-                    <div class="card-value">$${Number(summary.totalLubricationCost).toLocaleString()}</div>
+                    <div class="card-value">$${Number(summary.totalLubricationCost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                 </div>
                 <div class="card">
                     <div class="card-title">Avg KM/Liter</div>
@@ -501,10 +511,15 @@
                             }
                             
                             // Format currency
-                            if (key.includes('Cost') || key.includes('Amount') || key.includes('Price')) {
+                            if (key.includes('Cost') || key.includes('Amount') || key.includes('Price') || key.includes('Paid')) {
                                 if (value && !isNaN(value)) {
                                     value = `$${Number(value).toFixed(2)}`;
                                 }
+                            }
+                            
+                            // Format numbers
+                            if ((key.includes('Km') || key.includes('Liter') || key.includes('Odometer')) && value && !isNaN(value)) {
+                                value = Number(value).toLocaleString();
                             }
                             
                             rowsHtml += `<td>${value}</td>`;
@@ -524,6 +539,9 @@
             const errorText = document.getElementById('errorText');
             errorDiv.style.display = 'flex';
             errorText.textContent = 'Error loading data: ' + error;
+            
+            // Show troubleshooting info
+            console.error('Apps Script Error:', error);
         }
 
         function filterTable() {
@@ -560,9 +578,13 @@
             originalData.forEach(row => {
                 const rowData = headers.map(header => {
                     let value = row[header] || '';
+                    // Remove currency formatting for export
+                    if (typeof value === 'string') {
+                        value = value.replace('$', '');
+                    }
                     // Escape commas and quotes
-                    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-                        value = '"' + value.replace(/"/g, '""') + '"';
+                    if (value.toString().includes(',') || value.toString().includes('"') || value.toString().includes('\n')) {
+                        value = '"' + value.toString().replace(/"/g, '""') + '"';
                     }
                     return value;
                 });
@@ -579,6 +601,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
