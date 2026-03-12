@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Fuel Dashboard</title>
+    <title>Onpoint Cleaning - Complete Task Timer System</title>
     <style>
         * {
             margin: 0;
@@ -13,712 +13,1053 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             min-height: 100vh;
             padding: 20px;
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 25px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
         }
 
         .header h1 {
-            font-size: 2em;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 2.5em;
+            margin-bottom: 10px;
         }
 
-        .nav-buttons {
-            display: flex;
-            gap: 15px;
+        /* New Field Cleaners Button - Positioned in Header */
+        .field-btn-container {
+            position: absolute;
+            top: 20px;
+            right: 30px;
         }
 
-        .home-btn, .refresh-btn, .export-btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
+        .btn-field {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-        }
-
-        .home-btn {
-            background: rgba(255,255,255,0.2);
+            gap: 10px;
+            background: #4CAF50;
             color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1em;
             border: 2px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .home-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
+        .btn-field i {
+            font-size: 1.2em;
         }
 
-        .refresh-btn {
-            background: white;
-            color: #667eea;
+        .btn-field:hover {
+            background: #45a049;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.5);
         }
 
-        .refresh-btn:hover {
-            background: #f0f0f0;
-            transform: translateY(-2px);
+        .btn-field:active {
+            transform: translateY(-1px);
         }
 
-        .export-btn {
-            background: #28a745;
-            color: white;
+        /* Responsive button positioning */
+        @media (max-width: 768px) {
+            .header {
+                padding-top: 80px;
+            }
+            
+            .field-btn-container {
+                top: 15px;
+                right: 20px;
+                left: 20px;
+                text-align: center;
+            }
+            
+            .btn-field {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
         }
 
-        .export-btn:hover {
-            background: #218838;
-            transform: translateY(-2px);
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .stats-grid {
+        .stats-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
         }
 
         .stat-card {
             background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            border-left: 5px solid #667eea;
-            transition: transform 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-title {
-            color: #666;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .stat-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .stat-value small {
-            font-size: 0.5em;
-            color: #999;
-        }
-
-        .filters-section {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 12px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1em;
-        }
-
-        .search-box input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .filter-select {
-            padding: 12px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1em;
-            min-width: 200px;
-            background: white;
-        }
-
-        .table-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            overflow: auto;
-            max-height: 600px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1800px;
-        }
-
-        th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 12px;
-            font-weight: 600;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            color: #555;
-            font-size: 0.9em;
-        }
-
-        tr:hover {
-            background-color: #f8f9ff;
-        }
-
-        tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-
-        .drive-link {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 0.85em;
-            word-break: break-all;
-            display: inline-block;
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .drive-link:hover {
-            text-decoration: underline;
-            white-space: normal;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px;
-        }
-
-        .spinner {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #fee;
-            color: #c00;
-            padding: 30px;
-            border-radius: 15px;
-            margin: 20px 0;
-            text-align: center;
-            border: 2px solid #fcc;
-        }
-
-        .error button {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 1em;
-            margin-top: 15px;
-        }
-
-        .error button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            border-top: 1px solid #eee;
-            background: #fafafa;
-        }
-
-        .clear-filters {
-            color: #667eea;
-            cursor: pointer;
-            font-size: 0.9em;
-            text-decoration: underline;
-        }
-
-        .clear-filters:hover {
-            color: #764ba2;
-        }
-
-        .proxy-note {
-            background: #fff3cd;
-            color: #856404;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
             text-align: center;
-            border: 1px solid #ffeeba;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-top: 5px;
+        }
+
+        .staff-info {
+            background: #f8f9fa;
+            padding: 25px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .departments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            padding: 25px;
+        }
+
+        .department-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .department-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .department-header h3 {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        .department-header .staff-assign {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .tasks-list {
+            padding: 20px;
+        }
+
+        .task-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1e3c72;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .task-name {
+            font-weight: 600;
+            color: #1e3c72;
+            font-size: 1.1em;
+        }
+
+        .timer-display {
+            font-family: monospace;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2a5298;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+
+        .time-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-start {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .btn-stop {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .btn-start:disabled, .btn-stop:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .time-records {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .time-record {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .department-submit {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+            text-align: center;
+        }
+
+        .btn-submit-department {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-submit-department:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(30, 60, 114, 0.3);
+        }
+
+        .global-controls {
+            padding: 20px;
+            background: #e9ecef;
+            text-align: center;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-global {
+            background: #1e3c72;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-global:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(30, 60, 114, 0.3);
+        }
+
+        .status-message {
+            margin: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .global-timestamp {
+            text-align: right;
+            padding: 10px 25px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 0.9em;
+            border-top: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            .departments-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>
-                <span>🚗⛽</span>
-                Vehicle Fuel Management Dashboard
-            </h1>
-            <div class="nav-buttons">
-                <a href="#" onclick="window.location.reload()" class="home-btn">
-                    <span>🏠</span> Home
+            <h1>🧹 Onpoint Task Management System</h1>
+            <p>Real-time Task Tracking & Complete Data Collection</p>
+            
+            <!-- New Field Cleaners Button - Positioned at top right -->
+            <div class="field-btn-container">
+                <a href="field.html" class="btn-field">
+                    <i class="fas fa-leaf"></i> Field Cleaners
+                    <i class="fas fa-arrow-right"></i>
                 </a>
-                <button class="export-btn" onclick="exportToCSV()" id="exportBtn" disabled>
-                    <span>📥</span> Export CSV
-                </button>
-                <button class="refresh-btn" onclick="loadData()">
-                    <span>🔄</span> Refresh
-                </button>
             </div>
         </div>
 
-        <div class="content">
-            <!-- Statistics Cards -->
-            <div id="statsContainer" class="stats-grid"></div>
-
-            <!-- CORS Proxy Notice -->
-            <div id="proxyNote" class="proxy-note" style="display: none;">
-                ⚡ Using CORS proxy to fetch data. This is a temporary solution.
+        <!-- Statistics Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="label">Total Tasks</div>
+                <div class="value" id="totalTasks">40</div>
             </div>
+            <div class="stat-card">
+                <div class="label">Completed</div>
+                <div class="value" id="completedTasks">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">In Progress</div>
+                <div class="value" id="inProgressTasks">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Staff On Duty</div>
+                <div class="value" id="staffOnDuty">0</div>
+            </div>
+        </div>
 
-            <!-- Filters Section -->
-            <div class="filters-section" id="filtersSection" style="display: none;">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="🔍 Search..." onkeyup="filterData()">
+        <!-- Staff Information Section - ALL data collected here -->
+        <div class="staff-info">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>👤 Staff Name *</label>
+                    <select id="staffName" required>
+                        <option value="">Select staff member...</option>
+                        <option value="Francisca Tsotetsi">Francisca Tsotetsi</option>
+                        <option value="Selly Nxele">Selly Nxele</option>
+                        <option value="Lerato M. Mashini">Lerato M. Mashini</option>
+                    </select>
                 </div>
-                <select id="vehicleFilter" class="filter-select" onchange="filterData()">
-                    <option value="">All Vehicles</option>
-                </select>
-                <select id="driverFilter" class="filter-select" onchange="filterData()">
-                    <option value="">All Drivers</option>
-                </select>
-                <span class="clear-filters" onclick="clearFilters()">Clear Filters</span>
-            </div>
-
-            <!-- Loading Indicator -->
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <p>Connecting to Google Sheets...</p>
-                <p style="font-size: 0.9em; color: #666; margin-top: 10px;">This may take a few seconds</p>
-            </div>
-
-            <!-- Error Message -->
-            <div id="error" class="error" style="display: none;"></div>
-
-            <!-- Data Table -->
-            <div id="tableContainer" class="table-container" style="display: none;">
-                <table id="dataTable">
-                    <thead id="tableHeader"></thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
+                <div class="form-group">
+                    <label>📋 Employee ID *</label>
+                    <select id="employeeId" required>
+                        <option value="">Select employee ID...</option>
+                        <option value="SUB007">SUB007</option>
+                        <option value="CAS021">CAS021</option>
+                        <option value="DIS026">DIS026</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📅 Work Date</label>
+                    <input type="date" id="workDate">
+                </div>
+                <div class="form-group">
+                    <label>⏰ Shift Start</label>
+                    <input type="time" id="shiftStart">
+                </div>
+                <div class="form-group">
+                    <label>⏰ Shift End</label>
+                    <input type="time" id="shiftEnd">
+                </div>
+                <div class="form-group">
+                    <label>📍 Work Location</label>
+                    <select id="workLocation">
+                        <option value="">Select location...</option>
+                        <option value="Onpoint Group Head Office">Onpoint Group Head Office</option>
+                        <option value="DI Solutions">DI Solutions</option>
+                        <option value="Aqua Telecoms">Aqua Telecoms</option>
+                        <option value="NKanyezi Projects">NKanyezi Projects</option>
+                        <option value="Onpoint Ontime Solutions">Onpoint Ontime Solutions</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>👔 Supervisor</label>
+                    <input type="text" id="supervisor" placeholder="Supervisor name">
+                </div>
+                <div class="form-group">
+                    <label>📝 Notes</label>
+                    <input type="text" id="globalNotes" placeholder="General notes">
+                </div>
             </div>
         </div>
 
-        <div class="footer">
-            <p>Last updated: <span id="lastUpdated">Never</span></p>
-            <p>Total Records: <span id="totalRecords">0</span> | Showing: <span id="showingRecords">0</span></p>
+        <!-- Departments Container -->
+        <div class="departments-grid" id="departmentsContainer"></div>
+
+        <!-- Global Control Buttons -->
+        <div class="global-controls">
+            <button class="btn-global" onclick="submitAllDepartments()">📤 SUBMIT ALL DEPARTMENTS</button>
+            <button class="btn-global" onclick="exportAllData()">📊 EXPORT ALL DATA</button>
+            <button class="btn-global" onclick="resetAllTimers()">🔄 RESET ALL</button>
         </div>
+
+        <!-- Status Message -->
+        <div id="globalStatus" class="status-message"></div>
+
+        <!-- Timestamp -->
+        <div class="global-timestamp" id="globalTimestamp"></div>
     </div>
 
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
     <script>
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5_H_pe9EW7mheqxR_RrNKMKnOc1y8GRhJ_DYrSE8ReNZGC1bs4IyIwugJJgh_FjYn/exec';
-        
-        // CORS proxy URLs to try (in order)
-        const CORS_PROXIES = [
-            '', // Try direct connection first
-            'https://cors-anywhere.herokuapp.com/',
-            'https://api.allorigins.win/raw?url=',
-            'https://thingproxy.freeboard.io/fetch/'
-        ];
-        
-        let currentProxyIndex = 0;
-        let originalData = [];
-        let filteredData = [];
-        let uniqueVehicles = new Set();
-        let uniqueDrivers = new Set();
+        // ============================================
+        // CONFIGURATION - UPDATE WITH YOUR APPS SCRIPT URL
+        // ============================================
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylhlR-IutZ9UbdJq2bNmIiEnUmAIs2vIvtvqP0EfSNE3BcCgKIZ9159jszeFbK8DhwBQ/exec';
 
-        // Load data immediately
-        window.onload = function() {
-            loadData();
-        };
-
-        async function loadData() {
-            showLoading();
-            
-            // Try each proxy until one works
-            for (let i = 0; i < CORS_PROXIES.length; i++) {
-                currentProxyIndex = i;
-                const proxyUrl = CORS_PROXIES[i];
-                
-                try {
-                    let url;
-                    if (proxyUrl) {
-                        // Show proxy notice
-                        document.getElementById('proxyNote').style.display = 'block';
-                        // Encode the Apps Script URL for the proxy
-                        url = proxyUrl + encodeURIComponent(APPS_SCRIPT_URL + '?t=' + new Date().getTime());
-                    } else {
-                        // Direct connection
-                        document.getElementById('proxyNote').style.display = 'none';
-                        url = APPS_SCRIPT_URL + '?t=' + new Date().getTime();
-                    }
-                    
-                    console.log(`Trying proxy ${i}: ${proxyUrl || 'direct'}`);
-                    
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        mode: 'cors',
-                        cache: 'no-cache',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const text = await response.text();
-                    console.log('Response received, length:', text.length);
-                    
-                    // Try to parse the response
-                    let data;
-                    try {
-                        data = JSON.parse(text);
-                    } catch (e) {
-                        // If not JSON, try to extract JSON from the response
-                        const jsonMatch = text.match(/\{.*\}/s);
-                        if (jsonMatch) {
-                            data = JSON.parse(jsonMatch[0]);
-                        } else {
-                            throw new Error('Invalid response format');
-                        }
-                    }
-                    
-                    if (!data.success) {
-                        throw new Error(data.error || 'Unknown error');
-                    }
-                    
-                    // Success! Process the data
-                    processData(data);
-                    return;
-                    
-                } catch (error) {
-                    console.log(`Proxy ${i} failed:`, error.message);
-                    // Continue to next proxy
-                }
+        // Department definitions with their specific tasks
+        const departments = [
+            {
+                name: "Onpoint Group HQ",
+                tasks: ["Toilets Cleaning", "Kitchen Cleaning", "Office Cleaning", "Floor Mopping", "Window Cleaning", "Carpet Vacuuming", "Surface Dusting", "Waste Removal"]
+            },
+            {
+                name: "DI Solutions",
+                tasks: ["Toilets Cleaning", "Kitchen Cleaning", "Office Cleaning", "Floor Mopping", "Window Cleaning", "Carpet Vacuuming", "Surface Dusting", "Waste Removal"]
+            },
+            {
+                name: "Aqua Telecoms",
+                tasks: ["Toilets Cleaning", "Kitchen Cleaning", "Office Cleaning", "Floor Mopping", "Window Cleaning", "Carpet Vacuuming", "Surface Dusting", "Waste Removal"]
+            },
+            {
+                name: "Nkanyezi Projects",
+                tasks: ["Toilets Cleaning", "Kitchen Cleaning", "Office Cleaning", "Floor Mopping", "Window Cleaning", "Carpet Vacuuming", "Surface Dusting", "Waste Removal"]
+            },
+            {
+                name: "Onpoint Ontime Solutions",
+                tasks: ["Toilets Cleaning", "Kitchen Cleaning", "Office Cleaning", "Floor Mopping", "Window Cleaning", "Carpet Vacuuming", "Surface Dusting", "Waste Removal"]
             }
+        ];
+
+        // Store active timers and records
+        const timers = {};
+        const timeRecords = {};
+        let completedTasksCount = 0;
+        let inProgressCount = 0;
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        function initializeApp() {
+            initializeDepartments();
+            updateGlobalTimestamp();
+            setInterval(updateGlobalTimestamp, 1000);
+            setInterval(updateStatistics, 1000);
+
+            // Set default date
+            const today = new Date();
+            document.getElementById('workDate').value = today.toISOString().split('T')[0];
             
-            // If all proxies failed
-            showError(
-                'Unable to connect to Google Sheets. This is usually due to CORS restrictions.<br><br>' +
-                'To fix this permanently, you need to host this HTML file in one of these ways:<br>' +
-                '1. Use Google Apps Script to serve the HTML (recommended)<br>' +
-                '2. Use a simple HTTP server like "python -m http.server"<br>' +
-                '3. Use GitHub Pages or Netlify to host the file<br><br>' +
-                'Or try opening this HTML file using the "Live Server" extension in VS Code.'
-            );
+            // Set default shift times
+            document.getElementById('shiftStart').value = '08:00';
+            document.getElementById('shiftEnd').value = '17:00';
         }
 
-        function processData(result) {
-            originalData = result.data;
-            filteredData = [...originalData];
-            
-            // Extract unique values for filters
-            originalData.forEach(row => {
-                if (row['Vehicle Registration']) uniqueVehicles.add(row['Vehicle Registration']);
-                if (row['Driver Name']) uniqueDrivers.add(row['Driver Name']);
+        function initializeDepartments() {
+            const container = document.getElementById('departmentsContainer');
+            container.innerHTML = '';
+
+            departments.forEach((dept, deptIndex) => {
+                const deptCard = createDepartmentCard(dept, deptIndex);
+                container.appendChild(deptCard);
             });
-            
-            // Populate filters
-            populateFilters();
-            
-            // Calculate and display statistics
-            calculateStats(originalData);
-            
-            // Display headers and data
-            displayHeaders(result.headers);
-            displayRows(originalData);
-            
-            // Update UI
-            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
-            document.getElementById('totalRecords').textContent = originalData.length;
-            document.getElementById('showingRecords').textContent = originalData.length;
-            document.getElementById('filtersSection').style.display = 'flex';
-            document.getElementById('tableContainer').style.display = 'block';
-            document.getElementById('exportBtn').disabled = false;
-            
-            hideLoading();
         }
 
-        function calculateStats(data) {
-            let totalKm = 0, totalFuel = 0, totalCost = 0, totalLubeCost = 0;
-            let vehicles = new Set();
-            let drivers = new Set();
-            
-            data.forEach(row => {
-                totalKm += parseFloat(row['Km Traveled']) || 0;
-                totalFuel += parseFloat(row['Fuel Liters']) || 0;
-                totalCost += parseFloat(row['Total Cost']) || 0;
-                totalLubeCost += parseFloat(row['Lubrication Cost']) || 0;
-                if (row['Vehicle Registration']) vehicles.add(row['Vehicle Registration']);
-                if (row['Driver Name']) drivers.add(row['Driver Name']);
-            });
-            
-            const avgKmPerLiter = totalFuel > 0 ? (totalKm / totalFuel).toFixed(2) : 0;
-            const avgCostPerKm = totalKm > 0 ? (totalCost / totalKm).toFixed(2) : 0;
-            
-            const statsHTML = `
-                <div class="stat-card">
-                    <div class="stat-title">Total Entries</div>
-                    <div class="stat-value">${data.length}</div>
-                    <div class="stat-detail">${vehicles.size} Vehicles | ${drivers.size} Drivers</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Total Distance</div>
-                    <div class="stat-value">${Number(totalKm).toLocaleString()} <small>km</small></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Total Fuel</div>
-                    <div class="stat-value">${Number(totalFuel).toLocaleString()} <small>L</small></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Total Cost</div>
-                    <div class="stat-value">$${Number(totalCost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Avg Efficiency</div>
-                    <div class="stat-value">${avgKmPerLiter} <small>km/L</small></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Avg Cost/km</div>
-                    <div class="stat-value">$${avgCostPerKm}</div>
+        function createDepartmentCard(department, deptIndex) {
+            const card = document.createElement('div');
+            card.className = 'department-card';
+            card.id = `dept-${deptIndex}`;
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'department-header';
+            header.innerHTML = `
+                <h3>${department.name}</h3>
+                <div class="staff-assign" id="staff-${deptIndex}">
+                    Assigned to: <span id="assigned-staff-${deptIndex}">Not assigned</span>
                 </div>
             `;
-            
-            document.getElementById('statsContainer').innerHTML = statsHTML;
-        }
+            card.appendChild(header);
 
-        function populateFilters() {
-            const vehicleFilter = document.getElementById('vehicleFilter');
-            const driverFilter = document.getElementById('driverFilter');
+            // Tasks list
+            const tasksDiv = document.createElement('div');
+            tasksDiv.className = 'tasks-list';
             
-            vehicleFilter.innerHTML = '<option value="">All Vehicles</option>';
-            driverFilter.innerHTML = '<option value="">All Drivers</option>';
-            
-            [...uniqueVehicles].sort().forEach(vehicle => {
-                vehicleFilter.innerHTML += `<option value="${vehicle}">${vehicle}</option>`;
-            });
-            
-            [...uniqueDrivers].sort().forEach(driver => {
-                driverFilter.innerHTML += `<option value="${driver}">${driver}</option>`;
-            });
-        }
-
-        function filterData() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const vehicle = document.getElementById('vehicleFilter').value;
-            const driver = document.getElementById('driverFilter').value;
-            
-            filteredData = originalData.filter(row => {
-                // Search filter
-                if (searchTerm) {
-                    const searchable = Object.values(row).join(' ').toLowerCase();
-                    if (!searchable.includes(searchTerm)) return false;
-                }
+            department.tasks.forEach((task, taskIndex) => {
+                const taskId = `task-${deptIndex}-${taskIndex}`;
+                const taskDiv = createTaskItem(task, deptIndex, taskIndex, taskId);
+                tasksDiv.appendChild(taskDiv);
                 
-                // Vehicle filter
-                if (vehicle && row['Vehicle Registration'] !== vehicle) return false;
+                // Initialize timer data
+                timers[taskId] = {
+                    startTime: null,
+                    endTime: null,
+                    elapsedSeconds: 0,
+                    isRunning: false,
+                    interval: null
+                };
                 
-                // Driver filter
-                if (driver && row['Driver Name'] !== driver) return false;
-                
-                return true;
+                timeRecords[taskId] = [];
             });
             
-            displayRows(filteredData);
-            document.getElementById('showingRecords').textContent = filteredData.length;
+            card.appendChild(tasksDiv);
+
+            // Submit button
+            const submitDiv = document.createElement('div');
+            submitDiv.className = 'department-submit';
+            submitDiv.innerHTML = `
+                <button class="btn-submit-department" onclick="submitDepartmentTasks(${deptIndex})">
+                    📤 Submit ${department.name} Tasks
+                </button>
+                <div id="status-${deptIndex}" class="status-message"></div>
+            `;
+            card.appendChild(submitDiv);
+
+            return card;
         }
 
-        function clearFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('vehicleFilter').value = '';
-            document.getElementById('driverFilter').value = '';
-            filterData();
+        function createTaskItem(task, deptIndex, taskIndex, taskId) {
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'task-item';
+            taskDiv.id = taskId;
+
+            taskDiv.innerHTML = `
+                <div class="task-header">
+                    <span class="task-name">${task}</span>
+                    <span class="timer-display" id="${taskId}-timer">00:00:00</span>
+                </div>
+                <div class="time-controls">
+                    <button class="btn-start" onclick="startTimer('${taskId}')" id="${taskId}-start">▶ Start</button>
+                    <button class="btn-stop" onclick="stopTimer('${taskId}')" id="${taskId}-stop" disabled>⏹ Stop</button>
+                </div>
+                <div class="time-records" id="${taskId}-records">
+                    <div class="time-record">No completed sessions yet</div>
+                </div>
+            `;
+
+            return taskDiv;
         }
 
-        function displayHeaders(headers) {
-            const thead = document.getElementById('tableHeader');
-            let html = '<tr>';
-            
-            headers.forEach(header => {
-                if (header !== 'PDF Report Link') {
-                    const displayName = header
-                        .replace(/([A-Z])/g, ' $1')
-                        .replace(/_/g, ' ')
-                        .trim();
-                    html += `<th>${displayName}</th>`;
-                }
-            });
-            
-            html += '</tr>';
-            thead.innerHTML = html;
-        }
-
-        function displayRows(data) {
-            const tbody = document.getElementById('tableBody');
-            let html = '';
-
-            if (data.length === 0) {
-                html = '<tr><td colspan="100%" style="text-align: center; padding: 50px;">No records found</td></tr>';
-            } else {
-                data.forEach(row => {
-                    html += '<tr>';
-                    
-                    for (let key in row) {
-                        if (key === 'PDF Report Link') continue;
-                        
-                        let value = row[key] || '';
-                        
-                        // Format based on column type
-                        if (key === 'Date' || key === 'Timestamp') {
-                            try {
-                                const date = new Date(value);
-                                if (!isNaN(date.getTime())) {
-                                    value = date.toLocaleString();
-                                }
-                            } catch (e) {}
-                        }
-                        
-                        if (key.includes('Cost') || key.includes('Amount') || key.includes('Price')) {
-                            if (value && !isNaN(value)) {
-                                value = `$${Number(value).toFixed(2)}`;
-                            }
-                        }
-                        
-                        if (key === 'Drive Folder Link' && value) {
-                            value = `<a href="${value}" target="_blank" class="drive-link">📁 View Folder</a>`;
-                        }
-                        
-                        html += `<td>${value}</td>`;
-                    }
-                    
-                    html += '</tr>';
-                });
+        // ============================================
+        // TIMER FUNCTIONS
+        // ============================================
+        function startTimer(taskId) {
+            const staffName = document.getElementById('staffName').value;
+            if (!staffName) {
+                alert('Please select a staff name first');
+                return;
             }
 
-            tbody.innerHTML = html;
+            const timer = timers[taskId];
+            if (timer.isRunning) return;
+
+            timer.startTime = new Date();
+            timer.isRunning = true;
+            timer.interval = setInterval(() => updateTimerDisplay(taskId), 1000);
+
+            // Update UI
+            document.getElementById(`${taskId}-start`).disabled = true;
+            document.getElementById(`${taskId}-stop`).disabled = false;
+
+            // Update assigned staff
+            const deptIndex = taskId.split('-')[1];
+            document.getElementById(`assigned-staff-${deptIndex}`).textContent = staffName;
+            
+            // Update statistics
+            inProgressCount++;
+            updateStatistics();
         }
 
-        function exportToCSV() {
-            if (filteredData.length === 0) return;
+        function stopTimer(taskId) {
+            const timer = timers[taskId];
+            if (!timer.isRunning) return;
+
+            timer.endTime = new Date();
+            timer.isRunning = false;
+            clearInterval(timer.interval);
+
+            // Calculate elapsed time
+            const elapsedMs = timer.endTime - timer.startTime;
+            timer.elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+            // Record this session with ALL data
+            recordTaskSession(taskId);
+
+            // Update UI
+            document.getElementById(`${taskId}-start`).disabled = false;
+            document.getElementById(`${taskId}-stop`).disabled = true;
+
+            // Reset timer display
+            updateTimerDisplay(taskId, true);
             
-            const headers = Object.keys(filteredData[0]).filter(h => h !== 'PDF Report Link');
-            let csv = headers.join(',') + '\n';
+            // Update statistics
+            inProgressCount--;
+            completedTasksCount++;
+            updateStatistics();
+        }
+
+        function updateTimerDisplay(taskId, reset = false) {
+            const timer = timers[taskId];
+            const display = document.getElementById(`${taskId}-timer`);
             
-            filteredData.forEach(row => {
-                const rowData = headers.map(header => {
-                    let value = row[header] || '';
-                    value = value.toString().replace(/<[^>]*>/g, '');
-                    if (value.includes(',') || value.includes('"')) {
-                        value = '"' + value.replace(/"/g, '""') + '"';
-                    }
-                    return value;
-                });
-                csv += rowData.join(',') + '\n';
+            if (reset) {
+                display.textContent = '00:00:00';
+                return;
+            }
+
+            if (timer && timer.isRunning) {
+                const now = new Date();
+                const elapsedMs = now - timer.startTime;
+                const seconds = Math.floor(elapsedMs / 1000);
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                
+                display.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+        }
+
+        // ============================================
+        // RECORD KEEPING - Collects ALL form data
+        // ============================================
+        function recordTaskSession(taskId) {
+            const timer = timers[taskId];
+            const staffName = document.getElementById('staffName').value;
+            const employeeId = document.getElementById('employeeId').value;
+            const workDate = document.getElementById('workDate').value;
+            const shiftStart = document.getElementById('shiftStart').value;
+            const shiftEnd = document.getElementById('shiftEnd').value;
+            const workLocation = document.getElementById('workLocation').value;
+            const supervisor = document.getElementById('supervisor').value;
+            const globalNotes = document.getElementById('globalNotes').value;
+            
+            // Get task details from taskId
+            const [_, deptIndex, taskIndex] = taskId.split('-');
+            const department = departments[parseInt(deptIndex)].name;
+            const taskName = departments[parseInt(deptIndex)].tasks[parseInt(taskIndex)];
+
+            // Create complete session record with ALL fields
+            const session = {
+                // Staff Info
+                staffName: staffName,
+                employeeId: employeeId,
+                
+                // Task Info
+                department: department,
+                taskName: taskName,
+                
+                // Timing
+                startTime: timer.startTime,
+                endTime: timer.endTime,
+                durationSeconds: timer.elapsedSeconds,
+                durationMinutes: Math.round(timer.elapsedSeconds / 60),
+                durationHours: (timer.elapsedSeconds / 3600).toFixed(2),
+                
+                // Work Details
+                workDate: workDate,
+                shiftStart: shiftStart,
+                shiftEnd: shiftEnd,
+                workLocation: workLocation,
+                supervisor: supervisor,
+                
+                // Additional
+                notes: globalNotes,
+                taskNotes: '', // Can be added per task if needed
+                
+                // Metadata
+                submissionTimestamp: new Date().toISOString(),
+                taskId: taskId
+            };
+
+            // Store the session
+            if (!timeRecords[taskId]) {
+                timeRecords[taskId] = [];
+            }
+            timeRecords[taskId].push(session);
+            
+            // Update display
+            updateRecordsDisplay(taskId);
+        }
+
+        function updateRecordsDisplay(taskId) {
+            const records = timeRecords[taskId] || [];
+            const recordsDiv = document.getElementById(`${taskId}-records`);
+            
+            if (records.length === 0) {
+                recordsDiv.innerHTML = '<div class="time-record">No completed sessions yet</div>';
+                return;
+            }
+
+            let html = '';
+            records.slice(-3).reverse().forEach(record => {
+                html += `
+                    <div class="time-record">
+                        <span>${record.staffName}</span>
+                        <span>${record.durationMinutes}m</span>
+                    </div>
+                `;
             });
             
-            const blob = new Blob([csv], { type: 'text/csv' });
+            recordsDiv.innerHTML = html;
+        }
+
+        // ============================================
+        // SUBMISSION FUNCTIONS - Sends ALL data to Google Sheets
+        // ============================================
+        async function submitDepartmentTasks(deptIndex) {
+            const department = departments[deptIndex];
+            const staffName = document.getElementById('staffName').value;
+            const statusDiv = document.getElementById(`status-${deptIndex}`);
+            
+            if (!staffName) {
+                showStatus(statusDiv, '❌ Please select a staff name', 'error');
+                return;
+            }
+
+            // Collect ALL task data for this department
+            const taskData = [];
+            let totalTasks = 0;
+            
+            department.tasks.forEach((task, taskIndex) => {
+                const taskId = `task-${deptIndex}-${taskIndex}`;
+                const sessions = timeRecords[taskId] || [];
+                
+                sessions.forEach(session => {
+                    taskData.push({
+                        // Staff Information
+                        staffName: session.staffName,
+                        employeeId: session.employeeId,
+                        
+                        // Department & Task
+                        department: session.department,
+                        taskName: session.taskName,
+                        
+                        // Timing Data
+                        startTime: session.startTime,
+                        endTime: session.endTime,
+                        durationSeconds: session.durationSeconds,
+                        durationMinutes: session.durationMinutes,
+                        durationHours: session.durationHours,
+                        
+                        // Work Details
+                        workDate: session.workDate,
+                        shiftStart: session.shiftStart,
+                        shiftEnd: session.shiftEnd,
+                        workLocation: session.workLocation,
+                        supervisor: session.supervisor,
+                        
+                        // Notes
+                        notes: session.notes,
+                        taskNotes: session.taskNotes,
+                        
+                        // Metadata
+                        submittedBy: staffName,
+                        submissionTime: new Date().toISOString()
+                    });
+                    totalTasks++;
+                });
+            });
+
+            if (taskData.length === 0) {
+                showStatus(statusDiv, '❌ No completed tasks to submit', 'error');
+                return;
+            }
+
+            // Submit to Google Sheets
+            await submitToGoogleSheets({
+                type: 'department_submission',
+                department: department.name,
+                tasks: taskData,
+                submittedBy: staffName,
+                totalTasks: totalTasks,
+                timestamp: new Date().toISOString(),
+                
+                // Include global form data
+                globalData: {
+                    staffName: staffName,
+                    employeeId: document.getElementById('employeeId').value,
+                    workDate: document.getElementById('workDate').value,
+                    shiftStart: document.getElementById('shiftStart').value,
+                    shiftEnd: document.getElementById('shiftEnd').value,
+                    workLocation: document.getElementById('workLocation').value,
+                    supervisor: document.getElementById('supervisor').value,
+                    globalNotes: document.getElementById('globalNotes').value
+                }
+            }, statusDiv, deptIndex);
+        }
+
+        async function submitAllDepartments() {
+            const globalStatus = document.getElementById('globalStatus');
+            const staffName = document.getElementById('staffName').value;
+            
+            if (!staffName) {
+                showStatus(globalStatus, '❌ Please select a staff name', 'error');
+                return;
+            }
+
+            let allTasks = [];
+            let totalCount = 0;
+
+            // Collect data from all departments
+            departments.forEach((dept, deptIndex) => {
+                dept.tasks.forEach((task, taskIndex) => {
+                    const taskId = `task-${deptIndex}-${taskIndex}`;
+                    const sessions = timeRecords[taskId] || [];
+                    
+                    sessions.forEach(session => {
+                        allTasks.push(session);
+                        totalCount++;
+                    });
+                });
+            });
+
+            if (allTasks.length === 0) {
+                showStatus(globalStatus, '❌ No completed tasks to submit', 'error');
+                return;
+            }
+
+            // Submit all at once
+            await submitToGoogleSheets({
+                type: 'bulk_submission',
+                tasks: allTasks,
+                submittedBy: staffName,
+                totalTasks: totalCount,
+                timestamp: new Date().toISOString(),
+                globalData: {
+                    staffName: staffName,
+                    employeeId: document.getElementById('employeeId').value,
+                    workDate: document.getElementById('workDate').value,
+                    shiftStart: document.getElementById('shiftStart').value,
+                    shiftEnd: document.getElementById('shiftEnd').value,
+                    workLocation: document.getElementById('workLocation').value,
+                    supervisor: document.getElementById('supervisor').value,
+                    globalNotes: document.getElementById('globalNotes').value
+                }
+            }, globalStatus);
+        }
+
+        async function submitToGoogleSheets(data, statusDiv, deptIndex = null) {
+            try {
+                showStatus(statusDiv, 'Submitting...', 'info');
+                
+                console.log('Submitting data to Google Sheets:', data);
+
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                showStatus(statusDiv, `✅ ${data.totalTasks || data.tasks.length} tasks submitted successfully!`, 'success');
+                
+                // Clear submitted sessions if it was a department submission
+                if (deptIndex !== null) {
+                    clearDepartmentSessions(deptIndex);
+                }
+                
+                // Update statistics
+                updateStatistics();
+
+            } catch (error) {
+                console.error('Submission error:', error);
+                showStatus(statusDiv, '❌ Submission failed: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function showStatus(element, message, type) {
+            element.className = 'status-message ' + type;
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            if (type !== 'info') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function clearDepartmentSessions(deptIndex) {
+            const department = departments[deptIndex];
+            department.tasks.forEach((task, taskIndex) => {
+                const taskId = `task-${deptIndex}-${taskIndex}`;
+                timeRecords[taskId] = [];
+                updateRecordsDisplay(taskId);
+            });
+        }
+
+        function resetAllTimers() {
+            if (confirm('Are you sure you want to reset all timers and clear all records?')) {
+                // Reset all timers
+                Object.keys(timers).forEach(taskId => {
+                    const timer = timers[taskId];
+                    if (timer.interval) {
+                        clearInterval(timer.interval);
+                    }
+                    timer.isRunning = false;
+                    timer.startTime = null;
+                    timer.endTime = null;
+                    timer.elapsedSeconds = 0;
+                    
+                    // Reset UI
+                    document.getElementById(`${taskId}-start`).disabled = false;
+                    document.getElementById(`${taskId}-stop`).disabled = true;
+                    document.getElementById(`${taskId}-timer`).textContent = '00:00:00';
+                });
+                
+                // Clear all records
+                Object.keys(timeRecords).forEach(taskId => {
+                    timeRecords[taskId] = [];
+                    updateRecordsDisplay(taskId);
+                });
+                
+                // Reset counts
+                completedTasksCount = 0;
+                inProgressCount = 0;
+                updateStatistics();
+                
+                showStatus(document.getElementById('globalStatus'), '✅ All timers reset', 'success');
+            }
+        }
+
+        function exportAllData() {
+            const data = {
+                staffInfo: {
+                    staffName: document.getElementById('staffName').value,
+                    employeeId: document.getElementById('employeeId').value,
+                    workDate: document.getElementById('workDate').value,
+                    shiftStart: document.getElementById('shiftStart').value,
+                    shiftEnd: document.getElementById('shiftEnd').value,
+                    workLocation: document.getElementById('workLocation').value,
+                    supervisor: document.getElementById('supervisor').value,
+                    globalNotes: document.getElementById('globalNotes').value
+                },
+                taskRecords: timeRecords,
+                exportTime: new Date().toISOString()
+            };
+            
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `fuel_data_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `cleaning-data-${new Date().toISOString()}.json`;
             a.click();
-            URL.revokeObjectURL(url);
+            
+            showStatus(document.getElementById('globalStatus'), '✅ Data exported successfully', 'success');
         }
 
-        function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('tableContainer').style.display = 'none';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('filtersSection').style.display = 'none';
-            document.getElementById('exportBtn').disabled = true;
+        function updateStatistics() {
+            document.getElementById('completedTasks').textContent = completedTasksCount;
+            document.getElementById('inProgressTasks').textContent = inProgressCount;
+            
+            const staffName = document.getElementById('staffName').value;
+            document.getElementById('staffOnDuty').textContent = staffName ? '1' : '0';
+            
+            // Calculate total tasks (5 departments * 8 tasks)
+            document.getElementById('totalTasks').textContent = departments.length * 8;
         }
 
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
+        function updateGlobalTimestamp() {
+            const now = new Date();
+            document.getElementById('globalTimestamp').textContent = 
+                `Last updated: ${now.toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}`;
         }
 
-        function showError(message) {
-            document.getElementById('loading').style.display = 'none';
-            const errorDiv = document.getElementById('error');
-            errorDiv.style.display = 'block';
-            errorDiv.innerHTML = `
-                <strong>⚠️ Connection Error</strong><br><br>
-                ${message}<br><br>
-                <button onclick="loadData()">Try Again</button>
-            `;
-        }
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        document.getElementById('staffName').addEventListener('change', updateStatistics);
+
+        // Initialize on page load
+        window.onload = initializeApp;
     </script>
 </body>
 </html>
