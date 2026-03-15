@@ -56,11 +56,9 @@
         }
         .badge-missing { background: #fef1d6; color: #a66907; padding: 0.4rem 1rem; border-radius: 30px; }
         .badge-approved { background: #dff0d8; color: #2e6b2e; padding: 0.4rem 1rem; border-radius: 30px; }
-        .badge-variance { background: #e0e7ff; color: #1e3a8a; padding: 0.4rem 1rem; border-radius: 30px; }
         .badge-mismatch { background: #fadddd; color: #a33a3a; }
         .filter-chip { background: white; border-radius: 40px; padding: 0.5rem 1.2rem; cursor: pointer; border: 1px solid #dee2e6; }
         .filter-chip.active { background: #0b2b4a; color: white; border-color: #0b2b4a; }
-        .chart-container { height: 230px; margin-top: 0.5rem; }
         footer { color: #4e6379; }
     </style>
 </head>
@@ -81,7 +79,7 @@
             </div>
         </div>
 
-        <!-- KPI row with real-time totals -->
+        <!-- KPI row -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="stat-card d-flex align-items-center justify-content-between animate__animated animate__fadeInUp">
@@ -121,7 +119,7 @@
             </div>
         </div>
 
-        <!-- INPUT PANEL with ER Amount field (NEW) -->
+        <!-- INPUT PANEL -->
         <div class="glass-card p-4 mb-4 animate__animated animate__fadeInUp">
             <div class="row g-3 align-items-end">
                 <div class="col-md-2">
@@ -168,7 +166,7 @@
             </div>
         </div>
 
-        <!-- FILTER CHIPS: approved / not approved / all + search -->
+        <!-- FILTER CHIPS & SEARCH -->
         <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between my-4">
             <div class="d-flex gap-2">
                 <span class="filter-chip active" id="filterAll">📊 All records</span>
@@ -184,7 +182,6 @@
 
         <!-- main row: chart + variance summary + table -->
         <div class="row g-4">
-            <!-- left column: chart & totals by filter -->
             <div class="col-lg-5">
                 <div class="glass-card p-3 h-100">
                     <h5><i class="fas fa-chart-pie me-2"></i>Requested vs swiped (by filter)</h5>
@@ -194,7 +191,6 @@
                         <span><span class="badge-approved px-2 py-1">✔ approved (ER>0)</span></span>
                         <span><span class="badge-missing px-2 py-1">⚠ not approved (ER=0)</span></span>
                     </div>
-                    <!-- dynamic filter-based totals & variance -->
                     <div class="mt-3" id="filterTotals">
                         <div class="d-flex justify-content-between"><span>Total requested:</span> <span class="fw-bold" id="totalRequested">$0</span></div>
                         <div class="d-flex justify-content-between"><span>Total swiped:</span> <span class="fw-bold" id="totalSwipedFilter">$0</span></div>
@@ -203,12 +199,11 @@
                     </div>
                 </div>
             </div>
-            <!-- right column: table with variance column -->
             <div class="col-lg-7">
                 <div class="glass-card p-3">
                     <ul class="nav nav-tabs" id="reconTabs" role="tablist">
                         <li class="nav-item"><button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#allRecords">📋 Detailed view</button></li>
-                        <li class="nav-item"><button class="nav-link" id="discrepancy-tab" data-bs-toggle="tab" data-bs-target="#discrepancyRecords">⚠️ Exceptions (no ER / variance)</button></li>
+                        <li class="nav-item"><button class="nav-link" id="discrepancy-tab" data-bs-toggle="tab" data-bs-target="#discrepancyRecords">⚠️ Exceptions</button></li>
                     </ul>
                     <div class="tab-content mt-3">
                         <div class="tab-pane fade show active" id="allRecords">
@@ -236,7 +231,7 @@
             </div>
         </div>
 
-        <!-- PDF & export -->
+        <!-- PDF button -->
         <div class="d-flex justify-content-end mt-3 gap-2">
             <button class="btn btn-outline-secondary rounded-pill" id="exportPdfBtn"><i class="far fa-file-pdf me-2"></i>PDF exception report</button>
         </div>
@@ -248,10 +243,18 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         (function() {
-            // ---------- DATA MODEL with ER AMOUNT ----------
+            // ============================================================
+            // CONFIGURATION - UPDATE THESE VALUES
+            // ============================================================
+            const SHEET_ID = '1lgQdmhMDk9UYtN1v-aLf6MnodF-W0fMDS-d_yZ6Lcl4';  // Your sheet ID
+            const SHEET_NAME = 'Fuel Recon';                                 // Your sheet name
+            const DRIVE_FOLDER_ID = '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM';    // Drive folder ID
+            const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJYWcljtbuV83-JPrFxUJP1bawKb8S6UhaGhQ3zRkGO0aatY43zweBeTLD78PwvFLU/exec';  // REPLACE WITH YOUR APPS SCRIPT URL
+
+            // ---------- DATA MODEL ----------
             let fuelRecords = [];
 
-            // seed data with erAmount field
+            // Seed data
             function seedData() {
                 fuelRecords = [
                     { id: '1', date: '2025-03-18', driver: 'Moses', department: 'Fleet', costCenter: 'Onpoint Group HQ', erNo: 'ER-101', erAmount: 250.00, swipeAmount: 245.75 },
@@ -269,11 +272,10 @@
             seedData();
 
             let chartInstance = null;
-            let currentFilter = 'all'; // 'all', 'approved', 'notApproved'
+            let currentFilter = 'all';
 
             function generateId() { return Date.now() + '-' + Math.random().toString(36); }
 
-            // get filtered records based on currentFilter + search
             function getFilteredRecords() {
                 const search = document.getElementById('searchInput').value.trim().toLowerCase();
                 let filtered = fuelRecords.filter(r => 
@@ -282,7 +284,6 @@
                     r.costCenter.toLowerCase().includes(search) ||
                     (r.erNo && r.erNo.toLowerCase().includes(search))
                 );
-
                 if (currentFilter === 'approved') {
                     filtered = filtered.filter(r => r.erNo && r.erNo !== '0');
                 } else if (currentFilter === 'notApproved') {
@@ -291,16 +292,14 @@
                 return filtered;
             }
 
-            // update all UI: KPI, chart, tables, variance totals
             function refreshUI() {
-                // KPI (unfiltered)
+                // KPI
                 document.getElementById('totalSwipes').innerText = fuelRecords.length;
                 document.getElementById('totalApproved').innerText = fuelRecords.filter(r => r.erNo && r.erNo !== '0').length;
                 document.getElementById('totalNoEr').innerText = fuelRecords.filter(r => !r.erNo || r.erNo === '0').length;
                 const totalVar = fuelRecords.reduce((acc, r) => acc + (r.swipeAmount - (r.erAmount || 0)), 0);
                 document.getElementById('totalVariance').innerText = '$' + totalVar.toFixed(2);
 
-                // filtered records
                 const filtered = getFilteredRecords();
                 const totalRequested = filtered.reduce((acc, r) => acc + (r.erAmount || 0), 0);
                 const totalSwiped = filtered.reduce((acc, r) => acc + r.swipeAmount, 0);
@@ -313,10 +312,9 @@
                 const barPercent = Math.min(100, (variance > 0 ? totalSwiped/maxBar : totalRequested/maxBar)*100);
                 document.getElementById('varianceBar').style.width = barPercent + '%';
 
-                // chart data: approved vs not approved (filtered sums)
+                // Chart
                 const approvedSum = filtered.filter(r => r.erNo && r.erNo !== '0').reduce((a, r) => a + r.swipeAmount, 0);
                 const notApprovedSum = filtered.filter(r => !r.erNo || r.erNo === '0').reduce((a, r) => a + r.swipeAmount, 0);
-
                 if (chartInstance) chartInstance.destroy();
                 const ctx = document.getElementById('reconChart').getContext('2d');
                 chartInstance = new Chart(ctx, {
@@ -332,7 +330,7 @@
                     options: { cutout: '65%', plugins: { legend: { display: false } } }
                 });
 
-                // all records table
+                // All records table
                 const allBody = document.getElementById('allRecordsBody');
                 let allHtml = '';
                 filtered.forEach(rec => {
@@ -347,7 +345,8 @@
                 });
                 allBody.innerHTML = allHtml || '<tr><td colspan="7" class="text-center">no records</td></tr>';
 
-                // discrepancy table: erNo == 0 OR variance > 0.5 (significant)
+                // Discrepancy table
+                const discBody = document.getElementById('discrepancyBody');
                 let discHtml = '';
                 filtered.forEach(rec => {
                     const isApproved = (rec.erNo && rec.erNo !== '0');
@@ -355,7 +354,7 @@
                     if (!isApproved) {
                         discHtml += `<tr class="table-warning"><td>${rec.date}</td><td>${rec.driver}</td><td>0</td>
                             <td>$0</td><td>$${rec.swipeAmount.toFixed(2)}</td><td><span class="badge-missing">no ER (not approved)</span></td></tr>`;
-                    } else if (Math.abs(varianceVal) > 0.5) {  // variance threshold
+                    } else if (Math.abs(varianceVal) > 0.5) {
                         discHtml += `<tr class="table-danger"><td>${rec.date}</td><td>${rec.driver}</td><td>${rec.erNo}</td>
                             <td>$${(rec.erAmount || 0).toFixed(2)}</td><td>$${rec.swipeAmount.toFixed(2)}</td>
                             <td><span class="badge-mismatch">variance ${varianceVal > 0 ? '+' : ''}${varianceVal.toFixed(2)}</span></td></tr>`;
@@ -364,13 +363,35 @@
                 discBody.innerHTML = discHtml || '<tr><td colspan="6" class="text-center">✨ no exceptions</td></tr>';
             }
 
-            // ---------- send to google sheet (simulated) ----------
-            function sendToGoogleSheets(record) {
-                console.log('Apps Script send: ', record);
-                // In production: use fetch
+            // Send to Google Sheets
+            async function sendToGoogleSheets(record) {
+                const payload = {
+                    sheetId: SHEET_ID,
+                    sheetName: SHEET_NAME,
+                    driveFolderId: DRIVE_FOLDER_ID,
+                    timestamp: new Date().toISOString(),
+                    date: record.date,
+                    driver: record.driver,
+                    department: record.department,
+                    costCenter: record.costCenter,
+                    erNo: record.erNo,
+                    erAmount: record.erAmount,
+                    swipeAmount: record.swipeAmount
+                };
+                try {
+                    await fetch(GAS_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams(payload)
+                    });
+                    console.log('Sent to sheet:', payload);
+                } catch (error) {
+                    console.error('Error sending to Apps Script:', error);
+                }
             }
 
-            // add new swipe with ER Amount
+            // Add new record
             document.getElementById('addSwipeBtn').addEventListener('click', function() {
                 const date = document.getElementById('swipeDate').value;
                 const costCenter = document.getElementById('costCenter').value;
@@ -391,15 +412,14 @@
                 };
                 fuelRecords.push(newRecord);
                 sendToGoogleSheets(newRecord);
-
                 document.getElementById('erNo').value = '';
                 document.getElementById('erAmount').value = '';
                 document.getElementById('swipeAmount').value = '';
-
                 refreshUI();
+                alert('Record stored locally and sent to Google Sheet (if URL configured)');
             });
 
-            // filter chips
+            // Filter chips
             document.getElementById('filterAll').addEventListener('click', function() {
                 document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
                 this.classList.add('active'); currentFilter = 'all'; refreshUI();
@@ -413,7 +433,7 @@
                 this.classList.add('active'); currentFilter = 'notApproved'; refreshUI();
             });
 
-            // search
+            // Search
             document.getElementById('searchInput').addEventListener('input', refreshUI);
             document.getElementById('clearSearch').addEventListener('click', function() {
                 document.getElementById('searchInput').value = '';
@@ -427,6 +447,7 @@
                     <div style="padding:25px; font-family:Inter;">
                         <h2 style="color:#0b2b4a;">Onpoint Group · exception report</h2>
                         <p>${new Date().toLocaleString()} | logged in: Thabo M.</p>
+                        <p>Sheet ID: ${SHEET_ID} | Folder: ${DRIVE_FOLDER_ID}</p>
                         <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%">
                             <thead><tr><th>Date</th><th>Driver</th><th>ER No.</th><th>Request</th><th>Swiped</th><th>Issue</th></tr></thead>
                             <tbody>${discRows}</tbody>
@@ -438,7 +459,6 @@
                 html2pdf().from(el).set({ filename: 'Onpoint_exceptions.pdf', margin: 0.5 }).save().then(() => document.body.removeChild(el));
             });
 
-            // initial render
             refreshUI();
         })();
     </script>
