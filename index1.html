@@ -1,96 +1,838 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzf61emivheEIeZ9eYFD0Z9IKVrn53QiSSTFnq6MpwvvEv0XP1Y5_TZQlwpZv12ZOyx/exec";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>OnPoint OnTime Fleet - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
 
-let reports = [];
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-fetch(API_URL)
-.then(res => res.json())
-.then(data => {
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: slideIn 0.5s ease-out;
+        }
 
-reports = data;
+        @keyframes slideIn {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
 
-populateTable(data);
-updateStats(data);
-buildCharts(data);
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
 
-});
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
 
-function populateTable(data){
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
 
-const table = document.querySelector("#reportTable tbody");
+        .header img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
 
-table.innerHTML="";
+        .form-section {
+            padding: 30px;
+        }
 
-data.forEach(r=>{
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-let row = `
-<tr>
-<td>${r.ReportID}</td>
-<td>${r.Date}</td>
-<td>${r.Driver}</td>
-<td>${r.Vehicle}</td>
-<td>${r.AccidentType}</td>
-<td>${r.Status}</td>
-</tr>
-`;
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
 
-table.innerHTML += row;
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #eef2f6;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
 
-});
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
 
-}
+        .form-group input[type="password"] {
+            letter-spacing: 3px;
+        }
 
-function updateStats(data){
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #eef2f6;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f8fafc;
+            cursor: pointer;
+        }
 
-document.getElementById("totalReports").innerText = data.length;
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
 
-const vehicles = new Set(data.map(r=>r.Vehicle));
-document.getElementById("vehicles").innerText = vehicles.size;
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
 
-const today = new Date().toISOString().slice(0,10);
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-const todayCount = data.filter(r=>r.Date==today).length;
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
 
-document.getElementById("today").innerText = todayCount;
+        .remember-me label {
+            color: #555;
+            font-size: 14px;
+            cursor: pointer;
+        }
 
-const resolved = data.filter(r=>r.Status=="Resolved").length;
+        .forgot-password {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
 
-document.getElementById("resolved").innerText = resolved;
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
 
-}
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
 
-function buildCharts(data){
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
 
-let types = {};
+        .login-btn:active {
+            transform: translateY(0);
+        }
 
-data.forEach(r=>{
-types[r.AccidentType] = (types[r.AccidentType]||0)+1;
-});
+        .register-link {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
 
-new Chart(document.getElementById("accidentType"),{
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
 
-type:"pie",
+        .register-link a:hover {
+            text-decoration: underline;
+        }
 
-data:{
-labels:Object.keys(types),
-datasets:[{
-data:Object.values(types)
-}]
-}
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
 
-});
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
 
-}
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-document.getElementById("search").addEventListener("keyup",function(){
+        .error-message {
+            background: #f44336;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            animation: shake 0.5s ease-out;
+        }
 
-const value = this.value.toLowerCase();
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
 
-const filtered = reports.filter(r=>
-r.Driver.toLowerCase().includes(value) ||
-r.Vehicle.toLowerCase().includes(value) ||
-r.AccidentType.toLowerCase().includes(value)
-);
+        .success-message {
+            background: #4caf50;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
 
-populateTable(filtered);
+        .password-toggle {
+            position: relative;
+        }
 
-});
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+        }
+
+        .demo-credentials {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            border-left: 4px solid #667eea;
+        }
+
+        .demo-credentials p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .demo-credentials strong {
+            color: #667eea;
+        }
+
+        .back-to-login {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .back-to-login a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .back-to-login a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .remember-forgot {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="header">
+            <!-- You can replace with your company logo -->
+            <div style="font-size: 50px; margin-bottom: 10px;">🚛</div>
+            <h1>OnPoint Projects Management Reports</h1>
+            <p>Secure Access Portal</p>
+        </div>
+
+        <div class="form-section">
+            <div class="error-message" id="errorMessage">
+                ❌ Invalid username or password
+            </div>
+            <div class="success-message" id="successMessage">
+                ✅ Login successful! Redirecting...
+            </div>
+            <div class="success-message" id="registerSuccessMessage">
+                ✅ Registration successful! Please login with your credentials.
+            </div>
+
+            <!-- Demo credentials for testing -->
+            <div class="demo-credentials">
+                <p><strong>🔐 Demo Credentials:</strong></p>
+                <p>Username: <strong>admin@onpoint.co.za</strong> or <strong>driver1</strong></p>
+                <p>Password: <strong>**********</strong></p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username or Email *</label>
+                    <input type="text" id="username" placeholder="Enter your username or email" required autocomplete="username">
+                </div>
+
+                <div class="form-group password-toggle">
+                    <label for="password">Password *</label>
+                    <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+                    <span class="toggle-password" onclick="togglePassword()">👁️</span>
+                </div>
+
+                <div class="remember-forgot">
+                    <div class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        <label for="rememberMe">Remember me</label>
+                    </div>
+                    <a href="#" class="forgot-password" onclick="forgotPassword()">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    🔐 Sign In
+                </button>
+
+                <div class="register-link">
+                    Don't have an account? <a href="#" onclick="showRegister()">Register here</a>
+                </div>
+            </form>
+
+            <!-- Registration Form (initially hidden) -->
+            <div id="registerForm" style="display: none;">
+                <h3 style="color: #333; margin-bottom: 20px; text-align: center;">Create New Account</h3>
+                <form id="registerUserForm">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="regFullName" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="regEmail" placeholder="john@onpoint.co.za" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Username *</label>
+                        <input type="text" id="regUsername" placeholder="johndoe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" id="regPassword" placeholder="Create password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password *</label>
+                        <input type="password" id="regConfirmPassword" placeholder="Confirm password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Employee Number</label>
+                        <input type="text" id="regEmployeeNumber" placeholder="EMP001">
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="regRole">
+                            <option value="driver">Driver</option>
+                            <option value="manager">Fleet Manager</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="login-btn" style="background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);">
+                        📝 Create Account
+                    </button>
+                    <div class="back-to-login">
+                        <a href="#" onclick="showLogin()">← Back to Login</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div style="color: #333; font-weight: 600;">Processing...</div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - REPLACE WITH YOUR APPS SCRIPT URL
+        // ============================================
+        const CONFIG = {
+            // Your Google Apps Script Web App URL (from deployment)
+            GAS_URL: 'https://script.google.com/macros/s/AKfycbxFhlaIFEJGYnzX8r9cEx47X31tiXtn-xGFvUS2z6bjixFj8MK0_ffIlE_1Dqrkyym_Hg/exec',
+            
+            // Redirect URL after successful login (your fuel app)
+            REDIRECT_URL: 'dashboard.html', // or full URL like 'https://yourdomain.com/dashboard.html'
+            
+            // Session timeout in milliseconds (8 hours)
+            SESSION_TIMEOUT: 8 * 60 * 60 * 1000
+        };
+
+        // Store registered users in localStorage (for demo purposes)
+        // In production, this would be handled by your backend
+        let registeredUsers = [];
+
+        // Load registered users from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const stored = localStorage.getItem('onpoint_registered_users');
+            if (stored) {
+                registeredUsers = JSON.parse(stored);
+            }
+            
+            const session = localStorage.getItem('onpoint_session');
+            if (session) {
+                const sessionData = JSON.parse(session);
+                const now = new Date().getTime();
+                
+                // Check if session is still valid
+                if (now - sessionData.timestamp < CONFIG.SESSION_TIMEOUT) {
+                    // Auto-login
+                    window.location.href = CONFIG.REDIRECT_URL;
+                } else {
+                    // Session expired
+                    localStorage.removeItem('onpoint_session');
+                }
+            }
+        });
+
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.querySelector('.toggle-password');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.textContent = '👁️‍🗨️';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.textContent = '👁️';
+            }
+        }
+
+        // Forgot password handler
+        function forgotPassword() {
+            const email = prompt('Enter your email address to reset password:');
+            if (email) {
+                alert('Password reset link has been sent to ' + email);
+                // In production, this would call your Apps Script to send reset email
+            }
+        }
+
+        // Show registration form
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('registerSuccessMessage').style.display = 'none';
+        }
+
+        // Show login form
+        function showLogin() {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('registerSuccessMessage').style.display = 'none';
+        }
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
+            
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('loginBtn').disabled = true;
+            
+            try {
+                // Check against registered users first (for demo)
+                const registeredUser = registeredUsers.find(u => 
+                    (u.username === username || u.email === username) && u.password === password
+                );
+                
+                // Demo credentials
+                const isDemoUser = (username === 'admin@onpoint.co.za' && password === 'password123') ||
+                                  (username === 'driver1' && password === 'password123');
+                
+                if (registeredUser || isDemoUser) {
+                    
+                    // Simulate API delay
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    // Determine user info
+                    let userInfo;
+                    if (registeredUser) {
+                        userInfo = {
+                            userId: registeredUser.email,
+                            username: registeredUser.username,
+                            email: registeredUser.email,
+                            fullName: registeredUser.fullName,
+                            role: registeredUser.role
+                        };
+                    } else {
+                        userInfo = {
+                            userId: username,
+                            username: username,
+                            email: username.includes('@') ? username : username + '@onpoint.co.za',
+                            fullName: username === 'admin@onpoint.co.za' ? 'Admin User' : 'Driver User',
+                            role: username === 'admin@onpoint.co.za' ? 'admin' : 'driver'
+                        };
+                    }
+                    
+                    // Create session
+                    const sessionData = {
+                        ...userInfo,
+                        timestamp: new Date().getTime(),
+                        expires: new Date().getTime() + CONFIG.SESSION_TIMEOUT
+                    };
+                    
+                    if (rememberMe) {
+                        localStorage.setItem('onpoint_session', JSON.stringify(sessionData));
+                    } else {
+                        sessionStorage.setItem('onpoint_session', JSON.stringify(sessionData));
+                    }
+                    
+                    // Show success
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('errorMessage').style.display = 'none';
+                    
+                    // Redirect to fuel app
+                    setTimeout(() => {
+                        window.location.href = CONFIG.REDIRECT_URL;
+                    }, 1500);
+                    
+                } else {
+                    showError('Invalid username or password');
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    document.getElementById('loginBtn').disabled = false;
+                }
+                
+                // Production code - uncomment when using with Apps Script
+                /*
+                // Call Google Apps Script for authentication
+                const response = await fetch(CONFIG.GAS_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        username: username,
+                        password: password,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Create session
+                    const sessionData = {
+                        userId: result.userId,
+                        username: result.username,
+                        email: result.email,
+                        fullName: result.fullName,
+                        role: result.role,
+                        timestamp: new Date().getTime(),
+                        expires: new Date().getTime() + CONFIG.SESSION_TIMEOUT
+                    };
+                    
+                    if (rememberMe) {
+                        localStorage.setItem('onpoint_session', JSON.stringify(sessionData));
+                    } else {
+                        sessionStorage.setItem('onpoint_session', JSON.stringify(sessionData));
+                    }
+                    
+                    // Show success
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('errorMessage').style.display = 'none';
+                    
+                    // Redirect to fuel app
+                    setTimeout(() => {
+                        window.location.href = CONFIG.REDIRECT_URL;
+                    }, 1500);
+                    
+                } else {
+                    showError(result.message || 'Invalid username or password');
+                }
+                */
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Connection error. Please try again.');
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('loginBtn').disabled = false;
+            }
+        });
+
+        // Handle registration form submission
+        document.getElementById('registerUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('regFullName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const confirmPassword = document.getElementById('regConfirmPassword').value.trim();
+            const employeeNumber = document.getElementById('regEmployeeNumber').value.trim();
+            const role = document.getElementById('regRole').value;
+            
+            // Validate
+            if (!fullName || !email || !username || !password) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters long');
+                return;
+            }
+            
+            // Check if username or email already exists
+            if (registeredUsers.some(u => u.username === username)) {
+                alert('Username already exists. Please choose another one.');
+                return;
+            }
+            
+            if (registeredUsers.some(u => u.email === email)) {
+                alert('Email already registered. Please use another email or login.');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            try {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Create new user object
+                const newUser = {
+                    fullName,
+                    email,
+                    username,
+                    password, // In production, this should be hashed
+                    employeeNumber,
+                    role,
+                    registeredAt: new Date().toISOString()
+                };
+                
+                // Add to registered users array
+                registeredUsers.push(newUser);
+                
+                // Save to localStorage (for demo persistence)
+                localStorage.setItem('onpoint_registered_users', JSON.stringify(registeredUsers));
+                
+                // Hide loading
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Show success message on login form
+                document.getElementById('registerSuccessMessage').style.display = 'block';
+                
+                // Clear registration form
+                document.getElementById('registerUserForm').reset();
+                
+                // Switch to login form
+                showLogin();
+                
+                // Pre-fill login form with registered username
+                document.getElementById('username').value = username;
+                document.getElementById('password').value = '';
+                
+                // Auto-hide success message after 5 seconds
+                setTimeout(() => {
+                    document.getElementById('registerSuccessMessage').style.display = 'none';
+                }, 5000);
+                
+                // Production code - uncomment when using with Apps Script
+                /*
+                const response = await fetch(CONFIG.GAS_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        fullName: fullName,
+                        email: email,
+                        username: username,
+                        password: password,
+                        employeeNumber: employeeNumber,
+                        role: role,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Hide loading
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    
+                    // Show success message on login form
+                    document.getElementById('registerSuccessMessage').style.display = 'block';
+                    
+                    // Clear registration form
+                    document.getElementById('registerUserForm').reset();
+                    
+                    // Switch to login form
+                    showLogin();
+                    
+                    // Pre-fill login form with registered username
+                    document.getElementById('username').value = username;
+                    document.getElementById('password').value = '';
+                    
+                    // Auto-hide success message after 5 seconds
+                    setTimeout(() => {
+                        document.getElementById('registerSuccessMessage').style.display = 'none';
+                    }, 5000);
+                } else {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    alert(result.message || 'Registration failed');
+                }
+                */
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert('Connection error. Please try again.');
+            }
+        });
+
+        // Show error message
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = '❌ ' + message;
+            errorEl.style.display = 'block';
+            
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // Logout function (can be called from other pages)
+        function logout() {
+            localStorage.removeItem('onpoint_session');
+            sessionStorage.removeItem('onpoint_session');
+            window.location.href = 'login.html';
+        }
+
+        // Check authentication on protected pages
+        function checkAuth() {
+            const session = localStorage.getItem('onpoint_session') || sessionStorage.getItem('onpoint_session');
+            
+            if (!session) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            
+            const sessionData = JSON.parse(session);
+            const now = new Date().getTime();
+            
+            if (now - sessionData.timestamp > CONFIG.SESSION_TIMEOUT) {
+                logout();
+                return null;
+            }
+            
+            return sessionData;
+        }
+
+        // Make functions globally available
+        window.togglePassword = togglePassword;
+        window.forgotPassword = forgotPassword;
+        window.showRegister = showRegister;
+        window.showLogin = showLogin;
+        window.logout = logout;
+        window.checkAuth = checkAuth;
+    </script>
+</body>
+</html>
