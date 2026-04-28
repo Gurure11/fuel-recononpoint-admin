@@ -36,7 +36,7 @@
         <label>Summary View</label>
         <select id="groupBy">
           <option value="costCenter">Cost Center</option>
-          <option value="vehicle">Vehicle Registration</option>
+          <option value="vehicle" selected>Vehicle Registration</option>
           <option value="driver">Driver Name</option>
           <option value="department">Department</option>
         </select>
@@ -55,7 +55,7 @@
       <button id="reconcileBtn">Run Reconciliation</button>
       <button class="secondary" id="exportExcelBtn">Export Excel</button>
       <button class="secondary" id="exportCsvBtn">Export CSV</button>
-      <button class="light" id="downloadHtmlBtn">Download This HTML</button>
+      <button class="light" id="downloadPdfBtn">Download PDF Report</button>
     </div>
     <div style="margin-top:10px"><span id="sheetStatus" class="pill warn">Fuel Log not loaded yet</span></div>
     <div class="muted" style="margin-top:8px">Google Sheet ID: <strong>1SnhLTWgzJfkKNmIvtj8uwa-8x7TsnRtqkfX3deEuHIQ</strong> · Driver tab: <strong>Fuel Log</strong> · Recon output tab expected: <strong>Fuel Recon</strong></div>
@@ -88,8 +88,8 @@
 
   <section id="summaryPanel" class="panel">
     <div class="grid">
-      <div class="card" style="grid-column:span 2"><h3>Pie Chart by Selected Group</h3><canvas id="pieChart"></canvas></div>
-      <div class="card"><h3>Summary Table</h3><div class="scroll"><table id="summaryTable"><thead><tr><th>Group</th><th>Bank</th><th>Zoho</th><th>Driver Log</th><th>Variance</th><th>Records</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card" style="grid-column:span 2"><h3>Pie Chart by Vehicle Registration</h3><canvas id="pieChart"></canvas></div>
+      <div class="card"><h3>Summary Table</h3><div class="scroll"><table id="summaryTable"><thead><tr><th>Group</th><th>Bank</th><th>Zoho</th><th>Driver Log</th><th>Bank-Zoho</th><th>Bank-Driver</th><th>Zoho-Driver</th><th>Records</th></tr></thead><tbody></tbody></table></div></div>
     </div>
   </section>
 
@@ -160,13 +160,24 @@ function getField(row, group){
   return '';
 }
 function erKey(row){ return norm(getField(row,'er')); }
+function regKeyValue(v){ return norm(String(v || '').toUpperCase().replace(/\s+/g,'')); }
+function regKey(row){ return regKeyValue(getField(row,'vehicle')); }
+function makeMatchKey(row, source){
+  const er = erKey(row);
+  const reg = regKey(row);
+  if (er && reg) return `${er}|${reg}`;
+  if (er) return `er:${er}`;
+  if (reg) return `reg:${reg}`;
+  return '';
+}
 
 function mapRow(row, source){
   const amountGroup = source === 'driver' ? 'fuelTotal' : 'amount';
   return {
     source,
     er: cleanText(getField(row,'er')),
-    key: erKey(row),
+    key: makeMatchKey(row, source),
+    vehicleKey: regKey(row),
     date: excelDate(getField(row,'date')),
     amount: num(getField(row, amountGroup)),
     litres: num(getField(row,'litres')),
@@ -203,8 +214,9 @@ function updateMappingInfo(){
     <strong>Zoho mapped rows:</strong> ${zohoRows.length}<br>
     <strong>Bank mapped rows:</strong> ${bankRows.length}<br>
     <strong>Driver Fuel Log mapped rows:</strong> ${driverRows.length}<br><br>
-    Matching key used: ER No / Auth No / Report Number.<br>
-    If rows still do not show, check that at least one column contains ER/Auth/Report number and one column contains Amount/Fuel Total/Grand Total.`;
+    Matching key used: ER/Auth/Report Number + Vehicle Registration where available.<br>
+    If ER/Auth is missing, the system falls back to the same vehicle registration number so Bank, Zoho and Driver Fuel Log can still be compared.<br>
+    If rows still do not show, check that at least one column contains ER/Auth/Report number or vehicle registration, and one column contains Amount/Fuel Total/Grand Total.`;
 }
 
 async function handleZohoUpload(e){
@@ -255,39 +267,94 @@ function aggregate(rows){
   const map = new Map();
   rows.forEach((r,i)=>{
     const k = r.key || `missing_${r.source}_${i}`;
-    if (!map.has(k)) map.set(k,{key:k,er:r.er,date:r.date,amount:0,litres:0,vehicle:'',driver:'',costCenter:'',department:'',merchant:'',km:0,count:0});
+    if (!map.has(k)) map.set(k,{key:k,er:r.er,date:r.date,amount:0,litres:0,vehicle:'',vehicleKey:'',driver:'',costCenter:'',department:'',merchant:'',km:0,count:0});
     const x = map.get(k);
     x.amount += r.amount; x.litres += r.litres; x.km += r.km; x.count++;
-    x.er = x.er || r.er; x.date = x.date || r.date; x.vehicle = x.vehicle || r.vehicle; x.driver = x.driver || r.driver; x.costCenter = x.costCenter || r.costCenter; x.department = x.department || r.department; x.merchant = x.merchant || r.merchant;
+    x.er = x.er || r.er; x.date = x.date || r.date; x.vehicle = x.vehicle || r.vehicle; x.vehicleKey = x.vehicleKey || r.vehicleKey; x.driver = x.driver || r.driver; x.costCenter = x.costCenter || r.costCenter; x.department = x.department || r.department; x.merchant = x.merchant || r.merchant;
   });
   return map;
 }
 
+function dayDiff(a,b){
+  if (!a || !b) return 0;
+  const da = new Date(a), db = new Date(b);
+  if (isNaN(da.getTime()) || isNaN(db.getTime())) return 0;
+  return Math.abs((da - db) / 86400000);
+}
+function erValue(r){ return norm(r?.er || ''); }
+function sameVehicle(a,b){ return !a?.vehicleKey || !b?.vehicleKey || a.vehicleKey === b.vehicleKey; }
+function sameErWhenPresent(a,b){ return !erValue(a) || !erValue(b) || erValue(a) === erValue(b); }
+function isGoodMatch(a,b){
+  if (!a || !b) return false;
+  if (!sameVehicle(a,b)) return false;
+  if (!sameErWhenPresent(a,b)) return false;
+  return dayDiff(a.date,b.date) <= 2;
+}
+function findBestMatch(base, candidates, usedSet){
+  let bestIndex = -1, bestScore = -1;
+  candidates.forEach((c,i)=>{
+    if (usedSet.has(i) || !isGoodMatch(base,c)) return;
+    let score = 0;
+    if (erValue(base) && erValue(c) && erValue(base) === erValue(c)) score += 100;
+    if (base.vehicleKey && c.vehicleKey && base.vehicleKey === c.vehicleKey) score += 50;
+    score += Math.max(0, 10 - dayDiff(base.date,c.date));
+    if (Math.abs((base.amount||0) - (c.amount||0)) <= 1) score += 25;
+    if (score > bestScore) { bestScore = score; bestIndex = i; }
+  });
+  return bestIndex;
+}
+function makeReconRow(b,z,d){
+  const bankAmount = b?.amount || 0, zohoAmount = z?.amount || 0, driverAmount = d?.amount || 0;
+  const varianceBZ = bankAmount - zohoAmount;
+  const varianceBD = bankAmount - driverAmount;
+  const varianceZD = zohoAmount - driverAmount;
+  let status = 'Matched', issue = 'Matched';
+  const missing = [];
+  if (!b) missing.push('Bank'); if (!z) missing.push('Zoho'); if (!d) missing.push('Driver Log');
+  if (missing.length) { status = 'Missing'; issue = 'Missing in ' + missing.join(', '); }
+  else if (Math.abs(varianceBZ) > 1 || Math.abs(varianceBD) > 1 || Math.abs(varianceZD) > 1) {
+    status = 'Mismatch';
+    const issues = [];
+    if (Math.abs(varianceBZ) > 1) issues.push('Bank-Zoho variance');
+    if (Math.abs(varianceBD) > 1) issues.push('Bank-Driver variance');
+    if (Math.abs(varianceZD) > 1) issues.push('Zoho-Driver variance');
+    issue = issues.join(', ');
+  }
+  return {
+    date: b?.date || z?.date || d?.date || '', er: b?.er || z?.er || d?.er || '',
+    vehicle: b?.vehicle || z?.vehicle || d?.vehicle || '', driver: b?.driver || z?.driver || d?.driver || '',
+    costCenter: b?.costCenter || z?.costCenter || d?.costCenter || '', department: b?.department || z?.department || d?.department || '',
+    bankAmount, zohoAmount, driverAmount, varianceBZ, varianceBD, varianceZD, status, issue
+  };
+}
 function runReconciliation(){
-  const bank = aggregate(bankRows), zoho = aggregate(zohoRows), driver = aggregate(driverRows);
-  const keys = new Set([...bank.keys(),...zoho.keys(),...driver.keys()]);
-  reconRows = Array.from(keys).map(k=>{
-    const b = bank.get(k), z = zoho.get(k), d = driver.get(k);
-    const bankAmount = b?.amount || 0, zohoAmount = z?.amount || 0, driverAmount = d?.amount || 0;
-    const varianceBZ = bankAmount - zohoAmount;
-    const varianceBD = bankAmount - driverAmount;
-    const base = b || z || d || {};
-    let status = 'Matched', issue = 'Matched';
-    const missing = [];
-    if (!b) missing.push('Bank'); if (!z) missing.push('Zoho'); if (!d) missing.push('Driver Log');
-    if (missing.length) { status = 'Missing'; issue = 'Missing in ' + missing.join(', '); }
-    else if (Math.abs(varianceBZ) > 1 || Math.abs(varianceBD) > 1) { status = 'Mismatch'; issue = Math.abs(varianceBD) > 1 ? 'Driver Log variance' : 'Zoho variance'; }
-    return {
-      date: b?.date || z?.date || d?.date || '', er: b?.er || z?.er || d?.er || k,
-      vehicle: b?.vehicle || z?.vehicle || d?.vehicle || '', driver: b?.driver || z?.driver || d?.driver || '',
-      costCenter: b?.costCenter || z?.costCenter || d?.costCenter || '', department: b?.department || z?.department || d?.department || '',
-      bankAmount, zohoAmount, driverAmount, varianceBZ, varianceBD, status, issue
-    };
-  }).sort((a,b)=>(a.date||'').localeCompare(b.date||'') || String(a.er).localeCompare(String(b.er)));
+  const usedZoho = new Set(), usedDriver = new Set();
+  const rows = [];
+  bankRows.forEach(b=>{
+    const zi = findBestMatch(b, zohoRows, usedZoho);
+    const z = zi >= 0 ? zohoRows[zi] : null;
+    if (zi >= 0) usedZoho.add(zi);
+    const driverBase = z || b;
+    const di = findBestMatch(driverBase, driverRows, usedDriver);
+    const d = di >= 0 ? driverRows[di] : null;
+    if (di >= 0) usedDriver.add(di);
+    rows.push(makeReconRow(b,z,d));
+  });
+  zohoRows.forEach((z,zi)=>{
+    if (usedZoho.has(zi)) return;
+    const di = findBestMatch(z, driverRows, usedDriver);
+    const d = di >= 0 ? driverRows[di] : null;
+    if (di >= 0) usedDriver.add(di);
+    rows.push(makeReconRow(null,z,d));
+  });
+  driverRows.forEach((d,di)=>{
+    if (usedDriver.has(di)) return;
+    rows.push(makeReconRow(null,null,d));
+  });
+  reconRows = rows.sort((a,b)=>(a.date||'').localeCompare(b.date||'') || String(a.vehicle).localeCompare(String(b.vehicle)) || String(a.er).localeCompare(String(b.er)));
   renderRecon(); renderSummary(); updateKpis();
   if (APPS_SCRIPT_URL) uploadReconToSheet();
 }
-
 function renderRecon(){
   const tbody = document.querySelector('#reconTable tbody');
   if (!reconRows.length) { tbody.innerHTML = '<tr><td colspan="13">No reconciliation records yet.</td></tr>'; return; }
@@ -316,25 +383,31 @@ function periodKey(dateStr){
 }
 
 function renderSummary(){
-  const groupBy = document.getElementById('groupBy').value;
   const periodMode = document.getElementById('periodMode').value;
   const summary = new Map();
   reconRows.forEach(r=>{
-    let key = r[groupBy] || 'Unknown';
+    let key = r.vehicle || 'Unknown';
     const pk = periodKey(r.date);
     if (periodMode !== 'all') key = `${pk} · ${key}`;
-    if (!summary.has(key)) summary.set(key,{group:key,bank:0,zoho:0,driver:0,variance:0,count:0});
-    const x = summary.get(key); x.bank += r.bankAmount; x.zoho += r.zohoAmount; x.driver += r.driverAmount; x.variance += r.varianceBZ; x.count++;
+    if (!summary.has(key)) summary.set(key,{group:key,bank:0,zoho:0,driver:0,varianceBZ:0,varianceBD:0,varianceZD:0,count:0});
+    const x = summary.get(key);
+    x.bank += r.bankAmount;
+    x.zoho += r.zohoAmount;
+    x.driver += r.driverAmount;
+    x.varianceBZ += r.varianceBZ;
+    x.varianceBD += r.varianceBD;
+    x.varianceZD += r.varianceZD;
+    x.count++;
   });
-  const arr = Array.from(summary.values()).sort((a,b)=>b.bank-a.bank);
-  document.querySelector('#summaryTable tbody').innerHTML = arr.map(x=>`<tr><td>${x.group}</td><td>${money(x.bank)}</td><td>${money(x.zoho)}</td><td>${money(x.driver)}</td><td>${money(x.variance)}</td><td>${x.count}</td></tr>`).join('') || '<tr><td colspan="6">No summary yet.</td></tr>';
+  const arr = Array.from(summary.values()).sort((a,b)=>Math.abs(b.varianceBD)-Math.abs(a.varianceBD) || b.bank-a.bank);
+  document.querySelector('#summaryTable tbody').innerHTML = arr.map(x=>`<tr><td>${x.group}</td><td>${money(x.bank)}</td><td>${money(x.zoho)}</td><td>${money(x.driver)}</td><td>${money(x.varianceBZ)}</td><td>${money(x.varianceBD)}</td><td>${money(x.varianceZD)}</td><td>${x.count}</td></tr>`).join('') || '<tr><td colspan="8">No summary yet.</td></tr>';
   renderChart(arr);
 }
 
 function renderChart(arr){
   const ctx = document.getElementById('pieChart');
   if (pieChart) pieChart.destroy();
-  pieChart = new Chart(ctx,{type:'pie',data:{labels:arr.map(x=>x.group),datasets:[{data:arr.map(x=>x.bank)}]},options:{plugins:{legend:{position:'bottom'}}}});
+  pieChart = new Chart(ctx,{type:'pie',data:{labels:arr.map(x=>`${x.group} - ${money(x.bank)}`),datasets:[{data:arr.map(x=>x.bank)}]},options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:function(context){return `${context.label}`;}}}}}});
 }
 
 function updateKpis(){
@@ -363,9 +436,8 @@ async function uploadReconToSheet(){
   }catch(e){ console.warn('Could not upload to Fuel Recon tab', e); }
 }
 
-function downloadHtml(){
-  const blob = new Blob([document.documentElement.outerHTML],{type:'text/html'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fuel_reconciliation_dashboard.html'; a.click(); URL.revokeObjectURL(a.href);
+function downloadPdfReport(){
+  window.print();
 }
 
 document.getElementById('zohoFile').addEventListener('change',handleZohoUpload);
@@ -374,7 +446,7 @@ document.getElementById('loadFuelLogBtn').addEventListener('click',loadDriverLog
 document.getElementById('reconcileBtn').addEventListener('click',runReconciliation);
 document.getElementById('exportExcelBtn').addEventListener('click',()=>exportWorkbook('xlsx'));
 document.getElementById('exportCsvBtn').addEventListener('click',()=>exportWorkbook('csv'));
-document.getElementById('downloadHtmlBtn').addEventListener('click',downloadHtml);
+document.getElementById('downloadPdfBtn').addEventListener('click',downloadPdfReport);
 document.getElementById('groupBy').addEventListener('change',renderSummary);
 document.getElementById('periodMode').addEventListener('change',renderSummary);
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.panel).classList.add('active');}));
