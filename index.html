@@ -1,946 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Onpoint Group · Intelligent Fuel Reconciliation</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <style>
-    body { background:#eef4fa; font-family:Segoe UI,system-ui,sans-serif; }
-    .glass-card { background:#fff; border-radius:24px; padding:1.25rem; box-shadow:0 10px 30px rgba(11,43,74,.08); }
-    .btn-onpoint { background:#0b2b4a; color:#fff; border:none; border-radius:999px; padding:.65rem 1.35rem; }
-    .btn-onpoint:hover { background:#1e4f7b; color:#fff; }
-    .btn-soft { border-radius:999px; }
-    .summary-card { background:#f7fafc; border:1px solid #d7e1eb; border-radius:18px; padding:1rem; height:100%; }
-    .summary-label { color:#5d6c7d; font-size:.82rem; text-transform:uppercase; letter-spacing:.04em; }
-    .summary-value { color:#0b2b4a; font-size:1.6rem; font-weight:700; }
-    .filter-chip { background:#fff; border:1px solid #dbe3ec; border-radius:999px; padding:.5rem 1rem; cursor:pointer; }
-    .filter-chip.active { background:#0b2b4a; color:#fff; border-color:#0b2b4a; }
-    .status-ok { background:#dff5e3; color:#1d6b2f; padding:.3rem .8rem; border-radius:999px; font-weight:600; font-size:.8rem; }
-    .status-mismatch { background:#fce3e3; color:#a33636; padding:.3rem .8rem; border-radius:999px; font-weight:600; font-size:.8rem; }
-    .status-missing { background:#fff0d8; color:#8a5808; padding:.3rem .8rem; border-radius:999px; font-weight:600; font-size:.8rem; }
-    .table thead th { position:sticky; top:0; background:#0b2b4a; color:#fff; z-index:1; white-space:nowrap; }
-    .scroll-table { max-height:420px; overflow:auto; border-radius:18px; }
-    .report-block { background:#fff; padding:18px; border-radius:20px; }
-    .small-note { color:#6c7b8a; font-size:.9rem; }
-    .drop-note { font-size:.9rem; color:#56677a; }
-
-    .connection-pill { display:inline-flex; align-items:center; gap:.45rem; border-radius:999px; padding:.45rem .9rem; font-size:.9rem; border:1px solid #d7e1eb; background:#fff; color:#56677a; }
-    .connection-pill.ok { background:#dff5e3; color:#1d6b2f; border-color:#bfe6c8; }
-    .connection-pill.warn { background:#fff0d8; color:#8a5808; border-color:#f1d39f; }
-    .connection-pill.bad { background:#fce3e3; color:#a33636; border-color:#f1bcbc; }
-    #varianceChart { max-height: 180px !important; }
-
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuel Reconciliation (Bank vs Zoho vs Driver)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+body{font-family:Arial;background:#f4f6f9;padding:20px}
+.container{max-width:1200px;margin:auto;background:#fff;padding:20px;border-radius:12px}
+button{padding:10px 15px;border:none;background:#0b2b4a;color:#fff;border-radius:6px;cursor:pointer}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{padding:8px;border:1px solid #ddd;font-size:13px}
+th{background:#0b2b4a;color:#fff}
+.match{background:#d4edda}
+.mismatch{background:#f8d7da}
+.missing{background:#fff3cd}
+</style>
 </head>
 <body>
-<div class="container py-4">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-    <div class="d-flex align-items-center gap-3">
-      <i class="fas fa-gas-pump fa-3x" style="color:#0b2b4a;"></i>
-      <div>
-        <h2 class="fw-bold mb-0" style="color:#0b2b4a;">Onpoint Group · Intelligent Fuel Reconciliation</h2>
-        <div class="small-note">Upload Zoho export and bank statement, reconcile by ER / authorisation number, analyse variance and fuel efficiency.</div>
-      </div>
-    </div>
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-      <span id="connectionStatus" class="connection-pill warn"><i class="fas fa-circle-notch fa-spin"></i><span>Checking connection</span></span>
-      <button class="btn btn-onpoint" id="downloadExcelBtn"><i class="fas fa-file-excel me-2"></i>Download Excel</button>
-      <button class="btn btn-outline-secondary btn-soft" id="downloadPdfBtn"><i class="fas fa-file-pdf me-2"></i>Download PDF</button>
-    </div>
-  </div>
+<div class="container">
+<h2>3-Way Fuel Reconciliation</h2>
 
-  <div class="glass-card mb-4">
-    <div class="row g-3 align-items-end">
-      <div class="col-lg-4">
-        <label class="form-label fw-semibold">Upload Zoho export</label>
-        <input class="form-control" type="file" id="zohoFile" accept=".xlsx,.xls,.csv">
-        <div class="drop-note mt-1">Expected common fields: ER No / Auth No, Amount, Liters, Vehicle Reg, Driver, Cost Center, Department, Distance or Odometer.</div>
-      </div>
-      <div class="col-lg-4">
-        <label class="form-label fw-semibold">Upload bank statement / swipe report</label>
-        <input class="form-control" type="file" id="bankFile" accept=".xlsx,.xls,.csv">
-        <div class="drop-note mt-1">Expected common fields: Authorisation No / ER No, Date, Amount, Liters, Vehicle Reg, Driver.</div>
-      </div>
-      <div class="col-lg-4">
-        <label class="form-label fw-semibold">Tolerance for variance</label>
-        <div class="input-group">
-          <span class="input-group-text">R</span>
-          <input type="number" class="form-control" id="varianceTolerance" value="1" min="0" step="0.01">
-          <button class="btn btn-onpoint" id="reconcileBtn"><i class="fas fa-arrows-rotate me-2"></i>Reconcile</button>
-        </div>
-        <div class="small-note mt-1" id="loadStatus">No files loaded yet. Target sheet: Fuel Log / Fuel Recon / 1SnhLTWgzJfkKNmIvtj8uwa-8x7TsnRtqkfX3deEuHIQ</div>
-      </div>
-    </div>
-  </div>
+<label>Upload Zoho</label>
+<input type="file" id="zoho">
 
-  <div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="summary-card"><div class="summary-label">Matched swipes</div><div class="summary-value" id="kpiMatched">0</div></div></div>
-    <div class="col-md-3"><div class="summary-card"><div class="summary-label">Missing in Zoho / Bank</div><div class="summary-value" id="kpiExceptions">0</div></div></div>
-    <div class="col-md-3"><div class="summary-card"><div class="summary-label">Total variance</div><div class="summary-value" id="kpiVariance">R0.00</div></div></div>
-    <div class="col-md-3"><div class="summary-card"><div class="summary-label">Average km per litre</div><div class="summary-value" id="kpiEfficiency">0.00</div></div></div>
-  </div>
+<label>Upload Bank</label>
+<input type="file" id="bank">
 
-  <div class="row g-3 mb-4">
-    <div class="col-md-2"><div class="summary-card"><div class="summary-label">Bank amount</div><div class="summary-value" id="bankAmountTotal">R0.00</div></div></div>
-    <div class="col-md-2"><div class="summary-card"><div class="summary-label">Zoho amount</div><div class="summary-value" id="zohoAmountTotal">R0.00</div></div></div>
-    <div class="col-md-2"><div class="summary-card"><div class="summary-label">Bank litres</div><div class="summary-value" id="bankLitresTotal">0.00</div></div></div>
-    <div class="col-md-2"><div class="summary-card"><div class="summary-label">Zoho litres</div><div class="summary-value" id="zohoLitresTotal">0.00</div></div></div>
-    <div class="col-md-2"><div class="summary-card"><div class="summary-label">Bank records</div><div class="summary-value" id="bankCount">0</div></div></div>
-    <div class="col-md-2"><div class="summary-card"><div class="summary-label">Zoho records</div><div class="summary-value" id="zohoCount">0</div></div></div>
-  </div>
+<label>Upload Driver Log</label>
+<input type="file" id="driver">
 
-  <div class="glass-card mb-4">
-    <div class="row g-3">
-      <div class="col-md-3">
-        <label class="form-label fw-semibold">Department</label>
-        <select id="filterDepartment" class="form-select">
-          <option value="all">All Departments</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label fw-semibold">Cost center</label>
-        <select id="filterCostCenter" class="form-select">
-          <option value="all">All Cost Centers</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label fw-semibold">Vehicle registration</label>
-        <select id="filterVehicle" class="form-select">
-          <option value="all">All Vehicles</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label fw-semibold">Driver</label>
-        <select id="filterDriver" class="form-select">
-          <option value="all">All Drivers</option>
-        </select>
-      </div>
-      <div class="col-md-8">
-        <label class="form-label fw-semibold">Search</label>
-        <input id="searchInput" class="form-control" placeholder="Search ER no, auth no, driver, vehicle, department, cost center">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label fw-semibold">Status</label>
-        <div class="d-flex gap-2 flex-wrap">
-          <span class="filter-chip active" data-status="all">All</span>
-          <span class="filter-chip" data-status="matched">Matched</span>
-          <span class="filter-chip" data-status="mismatch">Variance</span>
-          <span class="filter-chip" data-status="missing">Missing</span>
-        </div>
-      </div>
-    </div>
-  </div>
+<br><br>
+<button onclick="reconcile()">Reconcile</button>
 
-  <div class="row g-4 mb-4">
-    <div class="col-lg-8">
-      <div class="glass-card">
-        <h5 class="mb-3"><i class="fas fa-scale-balanced me-2"></i>Reconciliation detail</h5>
-        <div class="scroll-table">
-          <table class="table table-sm align-middle">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>ER / Auth No</th>
-                <th>Driver</th>
-                <th>Vehicle</th>
-                <th>Department</th>
-                <th>Cost Center</th>
-                <th>Bank Amt</th>
-                <th>Zoho Amt</th>
-                <th>Variance</th>
-                <th>Bank L</th>
-                <th>Zoho L</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="reconTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg-4">
-      <div class="glass-card">
-        <h5 class="mb-3"><i class="fas fa-chart-column me-2"></i>Variance by category</h5>
-        <canvas id="varianceChart" height="140"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="row g-4 mb-4">
-    <div class="col-lg-6">
-      <div class="glass-card">
-        <h5 class="mb-3"><i class="fas fa-gauge-high me-2"></i>Fuel efficiency report</h5>
-        <div class="scroll-table">
-          <table class="table table-sm align-middle">
-            <thead>
-              <tr>
-                <th>Vehicle</th>
-                <th>Driver</th>
-                <th>Department</th>
-                <th>Distance</th>
-                <th>Litres</th>
-                <th>Km/L</th>
-              </tr>
-            </thead>
-            <tbody id="efficiencyTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg-6">
-      <div class="glass-card">
-        <h5 class="mb-3"><i class="fas fa-table-list me-2"></i>Summary by dimension</h5>
-        <div class="mb-2">
-          <select id="summaryMode" class="form-select">
-            <option value="costCenter">By Cost Center</option>
-            <option value="department">By Department</option>
-            <option value="vehicle">By Vehicle Registration</option>
-            <option value="driver">By Driver</option>
-          </select>
-        </div>
-        <div class="scroll-table">
-          <table class="table table-sm align-middle">
-            <thead>
-              <tr>
-                <th>Group</th>
-                <th>Bank Amt</th>
-                <th>Zoho Amt</th>
-                <th>Variance</th>
-                <th>Bank L</th>
-                <th>Zoho L</th>
-                <th>Records</th>
-              </tr>
-            </thead>
-            <tbody id="summaryTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <div class="glass-card mb-4">
-    <h5 class="mb-3"><i class="fas fa-list me-2"></i>Daily Drivers Fuel Transactions</h5>
-    <div class="scroll-table">
-      <table class="table table-sm align-middle">
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Date</th>
-            <th>Driver</th>
-            <th>Vehicle</th>
-            <th>ER Number</th>
-            <th>Merchant</th>
-            <th>Odo Start</th>
-            <th>Odo Finish</th>
-            <th>Fuel Type</th>
-            <th>Price/L</th>
-            <th>Liters</th>
-            <th>Fuel Total</th>
-            <th>Lubrication</th>
-            <th>Lube Cost</th>
-            <th>Tolls</th>
-            <th>Toll Total</th>
-            <th>Grand Total</th>
-            <th>Cost Center</th>
-            <th>Department</th>
-            <th>Notes</th>
-            <th>KM Traveled</th>
-            <th>KM/Liter</th>
-            <th>Submission ID</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="fuelLogTableBody">
-          <tr><td colspan="24" class="text-center py-4">No fuel transactions loaded yet.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div id="pdfReportRoot" class="report-block">
-    <h4 class="mb-3" style="color:#0b2b4a;">Fuel Reconciliation Report</h4>
-    <div class="small-note mb-3" id="reportMeta"></div>
-    <div class="row g-3 mb-3">
-      <div class="col-md-3"><div class="summary-card"><div class="summary-label">Matched</div><div class="summary-value" id="pdfMatched">0</div></div></div>
-      <div class="col-md-3"><div class="summary-card"><div class="summary-label">Exceptions</div><div class="summary-value" id="pdfExceptions">0</div></div></div>
-      <div class="col-md-3"><div class="summary-card"><div class="summary-label">Variance</div><div class="summary-value" id="pdfVariance">R0.00</div></div></div>
-      <div class="col-md-3"><div class="summary-card"><div class="summary-label">KM/L</div><div class="summary-value" id="pdfEfficiency">0.00</div></div></div>
-    </div>
-    <div class="small-note">The PDF exports the report area above using your current filters and reconciled data.</div>
-  </div>
+<table id="table">
+<thead>
+<tr>
+<th>ER No</th>
+<th>Vehicle</th>
+<th>Driver</th>
+<th>Bank</th>
+<th>Zoho</th>
+<th>Driver Log</th>
+<th>Bank-Zoho</th>
+<th>Bank-Driver</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 </div>
 
 <script>
+let zohoData=[], bankData=[], driverData=[];
 
-(function() {
-  const SHEET_CONFIG = {
-    spreadsheetId: '1SnhLTWgzJfkKNmIvtj8uwa-8x7TsnRtqkfX3deEuHIQ',
-    spreadsheetName: 'Fuel Log',
-    sheetTab: 'Fuel Log',
-    appsScriptUrl: 'https://script.google.com/macros/s/AKfycbxrzuEIczrh80XmMsM_ix_mkSpPn7cSPlE6i7ITfgqACAAxtledMYEvEG_qW30bmhf6/exec'
-  };
+function readFile(file, callback){
+ const reader=new FileReader();
+ reader.onload=e=>{
+  const wb=XLSX.read(e.target.result,{type:'array'});
+  const data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  callback(data);
+ };
+ reader.readAsArrayBuffer(file);
+}
 
-  const state = {
-    zohoRaw: [],
-    bankRaw: [],
-    zohoRows: [],
-    bankRows: [],
-    reconciled: [],
-    currentStatus: 'all',
-    chart: null
-  };
+document.getElementById('zoho').onchange=e=>readFile(e.target.files[0],d=>zohoData=d);
+document.getElementById('bank').onchange=e=>readFile(e.target.files[0],d=>bankData=d);
+document.getElementById('driver').onchange=e=>readFile(e.target.files[0],d=>driverData=d);
 
-  const aliases = {
-    authNo: ['authorisationno','authorizationno','authno','erno','erno','authorizationnumber','authorisationnumber','approvalcode','reference','auth'],
-    date: ['date','transactiondate','swipedate','fueldate','docdate'],
-    amount: ['amount','swipedamount','transactionamount','randvalue','value'],
-    litres: ['litres','liters','fuellitres','fuelliters','qtylitres','quantitylitres','qty'],
-    vehicle: ['vehicleregistration','vehiclereg','vehicleregnumber','registration','regno','regnumber','vehicle','fleetnumber'],
-    driver: ['driver','drivername','employeename','staffname'],
-    department: ['department','dept','division'],
-    costCenter: ['costcenter','costcentre','businessunit','cost_center'],
-    distance: ['distancecovered','distance','km','kilometers','kilometres'],
-    odometerStart: ['odometerstart','openingodometer','odoopen','startodo'],
-    odometerEnd: ['odometerend','closingodometer','odoclose','endodo'],
-    litersAuthorized: ['authorizedlitres','authorisedlitres','zoliters','zoholitres'],
-    taskNotes: ['notes','description'],
-    departmentAlt: ['site','branch']
-  };
+function getKey(row){
+ return (row['ER No']||row['Auth No']||row['ER Number']||'').toString().trim();
+}
 
-  const $ = (id) => document.getElementById(id);
-  const appsScriptReady = () => /^https:\/\/script\.google\.com\/macros\/s\//.test(String(SHEET_CONFIG.appsScriptUrl || ''));
-  async function postToAppsScript(payload) {
-    if (!appsScriptReady()) return { skipped: true };
-    const resp = await fetch(SHEET_CONFIG.appsScriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
-    const txt = await resp.text();
-    try { return JSON.parse(txt); } catch { return { ok: resp.ok, raw: txt }; }
+function getAmount(row){
+ return Number(row['Amount']||row['Fuel Total']||row['Grand Total']||0);
+}
+
+function reconcile(){
+ const map={};
+
+ zohoData.forEach(r=>{
+  const k=getKey(r);
+  if(!map[k]) map[k]={};
+  map[k].zoho=getAmount(r);
+  map[k].vehicle=r['Vehicle']||'';
+  map[k].driver=r['Driver']||'';
+ });
+
+ bankData.forEach(r=>{
+  const k=getKey(r);
+  if(!map[k]) map[k]={};
+  map[k].bank=getAmount(r);
+  map[k].vehicle=map[k].vehicle||r['Vehicle'];
+  map[k].driver=map[k].driver||r['Driver'];
+ });
+
+ driverData.forEach(r=>{
+  const k=getKey(r);
+  if(!map[k]) map[k]={};
+  map[k].driverAmt=getAmount(r);
+  map[k].vehicle=map[k].vehicle||r['Vehicle'];
+  map[k].driver=map[k].driver||r['Driver'];
+ });
+
+ const tbody=document.querySelector('#table tbody');
+ tbody.innerHTML='';
+
+ Object.keys(map).forEach(k=>{
+  const r=map[k];
+  const bank=r.bank||0;
+  const zoho=r.zoho||0;
+  const driver=r.driverAmt||0;
+
+  const v1=bank-zoho;
+  const v2=bank-driver;
+
+  let status='Matched',cls='match';
+
+  if(!r.bank||!r.zoho||!r.driverAmt){
+   status='Missing';cls='missing';
+  }else if(Math.abs(v1)>1||Math.abs(v2)>1){
+   status='Mismatch';cls='mismatch';
   }
 
-  function sheetInfoText() {
-    return `${SHEET_CONFIG.spreadsheetName} / ${SHEET_CONFIG.sheetTab} / ${SHEET_CONFIG.spreadsheetId}`;
-  }
+  const tr=document.createElement('tr');
+  tr.className=cls;
 
-  function setConnectionStatus(mode, message) {
-    const el = $('connectionStatus');
-    if (!el) return;
-    const icon = mode === 'ok' ? 'fa-check-circle' : (mode === 'bad' ? 'fa-triangle-exclamation' : 'fa-circle-notch fa-spin');
-    el.className = `connection-pill ${mode === 'ok' ? 'ok' : mode === 'bad' ? 'bad' : 'warn'}`;
-    el.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
-  }
+  tr.innerHTML=`
+  <td>${k}</td>
+  <td>${r.vehicle||''}</td>
+  <td>${r.driver||''}</td>
+  <td>${bank.toFixed(2)}</td>
+  <td>${zoho.toFixed(2)}</td>
+  <td>${driver.toFixed(2)}</td>
+  <td>${v1.toFixed(2)}</td>
+  <td>${v2.toFixed(2)}</td>
+  <td>${status}</td>`;
 
-  function normalizeFetchedDate(v) {
-    if (v === null || v === undefined || v === '') return '';
-    if (typeof v === 'number') {
-      const d = new Date(Math.round((v - 25569) * 86400 * 1000));
-      if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    }
-    const s = String(v).trim();
-    const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if (iso) return `${iso[1]}-${String(iso[2]).padStart(2,'0')}-${String(iso[3]).padStart(2,'0')}`;
-    const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-    if (dmy) {
-      const year = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
-      return `${year}-${String(dmy[2]).padStart(2,'0')}-${String(dmy[1]).padStart(2,'0')}`;
-    }
-    const d = new Date(s);
-    if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    return '';
-  }
-
-  async function testAppsScriptConnection() {
-    if (!appsScriptReady()) {
-      setConnectionStatus('bad', 'Set Apps Script URL');
-      return false;
-    }
-    try {
-      const url = `${SHEET_CONFIG.appsScriptUrl}?action=health&spreadsheetId=${encodeURIComponent(SHEET_CONFIG.spreadsheetId)}&_=${Date.now()}`;
-      const resp = await fetch(url);
-      const data = await resp.json();
-      if (data && (data.ok === true || data.success === true)) {
-        setConnectionStatus('ok', 'Connected');
-        return true;
-      }
-      setConnectionStatus('bad', 'Connection failed');
-      return false;
-    } catch (err) {
-      setConnectionStatus('bad', 'Connection failed');
-      return false;
-    }
-  }
-  const money = (v) => 'R' + (Number(v || 0)).toFixed(2);
-  const num = (v) => {
-    if (v === null || v === undefined || v === '') return 0;
-    if (typeof v === 'number') return isFinite(v) ? v : 0;
-    return Number(String(v).replace(/[^0-9.-]/g, '')) || 0;
-  };
-  const text = (v) => String(v ?? '').trim();
-  const lower = (v) => text(v).toLowerCase();
-  const normal = (v) => lower(v).replace(/[^a-z0-9]/g, '');
-  const dateText = (v) => {
-    if (!v && v !== 0) return '';
-    if (typeof v === 'number') {
-      const parsed = XLSX.SSF.parse_date_code(v);
-      if (parsed) return `${parsed.y}-${String(parsed.m).padStart(2,'0')}-${String(parsed.d).padStart(2,'0')}`;
-    }
-    const d = new Date(v);
-    if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    const s = text(v);
-    const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
-    return m ? m[1] : s;
-  };
-
-  function bestKey(obj, group) {
-    const keys = Object.keys(obj || {});
-    for (const key of keys) {
-      if (group.includes(normal(key))) return key;
-    }
-    return '';
-  }
-
-  function parseWorkbook(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = e.target.result;
-          const wb = XLSX.read(data, { type: 'array' });
-          const firstSheet = wb.Sheets[wb.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
-          resolve(rows);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsArrayBuffer(file);
-    });
-  }
-
-  function mapCommonRow(raw, source) {
-    const authKey = bestKey(raw, aliases.authNo);
-    const dateKey = bestKey(raw, aliases.date);
-    const amountKey = bestKey(raw, aliases.amount);
-    const litresKey = bestKey(raw, aliases.litres);
-    const vehicleKey = bestKey(raw, aliases.vehicle);
-    const driverKey = bestKey(raw, aliases.driver);
-    const deptKey = bestKey(raw, aliases.department) || bestKey(raw, aliases.departmentAlt);
-    const costCenterKey = bestKey(raw, aliases.costCenter);
-    const distanceKey = bestKey(raw, aliases.distance);
-    const odoStartKey = bestKey(raw, aliases.odometerStart);
-    const odoEndKey = bestKey(raw, aliases.odometerEnd);
-
-    let distance = num(raw[distanceKey]);
-    if (!distance && (odoStartKey || odoEndKey)) {
-      distance = Math.max(0, num(raw[odoEndKey]) - num(raw[odoStartKey]));
-    }
-
-    return {
-      source,
-      date: dateText(raw[dateKey]),
-      authNo: text(raw[authKey]),
-      amount: num(raw[amountKey]),
-      litres: num(raw[litresKey]),
-      vehicle: text(raw[vehicleKey]),
-      driver: text(raw[driverKey]),
-      department: text(raw[deptKey]),
-      costCenter: text(raw[costCenterKey]),
-      distance,
-      raw
-    };
-  }
-
-  function aggregateByAuth(rows) {
-    const map = new Map();
-    rows.forEach((row, idx) => {
-      const key = normal(row.authNo) || `__missing__${row.source}_${idx}_${normal(row.vehicle)}_${normal(row.driver)}_${row.date}_${row.amount}`;
-      if (!map.has(key)) {
-        map.set(key, {
-          key,
-          authNo: row.authNo,
-          date: row.date,
-          amount: 0,
-          litres: 0,
-          vehicle: row.vehicle,
-          driver: row.driver,
-          department: row.department,
-          costCenter: row.costCenter,
-          distance: 0,
-          sourceRows: []
-        });
-      }
-      const item = map.get(key);
-      item.amount += num(row.amount);
-      item.litres += num(row.litres);
-      item.distance += num(row.distance);
-      item.vehicle = item.vehicle || row.vehicle;
-      item.driver = item.driver || row.driver;
-      item.department = item.department || row.department;
-      item.costCenter = item.costCenter || row.costCenter;
-      item.date = item.date || row.date;
-      item.authNo = item.authNo || row.authNo;
-      item.sourceRows.push(row);
-    });
-    return Array.from(map.values());
-  }
-
-  function reconcile() {
-    const tolerance = num($('varianceTolerance').value);
-    const bankAgg = aggregateByAuth(state.bankRows);
-    const zohoAgg = aggregateByAuth(state.zohoRows);
-    const zohoMap = new Map(zohoAgg.map(r => [r.key, r]));
-    const bankMap = new Map(bankAgg.map(r => [r.key, r]));
-    const allKeys = new Set([...zohoMap.keys(), ...bankMap.keys()]);
-
-    state.reconciled = Array.from(allKeys).map(key => {
-      const bank = bankMap.get(key) || null;
-      const zoho = zohoMap.get(key) || null;
-      const bankAmount = num(bank?.amount);
-      const zohoAmount = num(zoho?.amount);
-      const bankLitres = num(bank?.litres);
-      const zohoLitres = num(zoho?.litres);
-      const distance = Math.max(num(bank?.distance), num(zoho?.distance));
-      const variance = bankAmount - zohoAmount;
-
-      let status = 'matched';
-      let issue = 'Matched';
-      if (!bank || !zoho) {
-        status = 'missing';
-        issue = bank ? 'Missing in Zoho' : 'Missing in Bank';
-      } else if (Math.abs(variance) > tolerance) {
-        status = 'mismatch';
-        issue = 'Variance';
-      }
-
-      const litresForEfficiency = bankLitres || zohoLitres;
-      const efficiency = litresForEfficiency > 0 && distance > 0 ? distance / litresForEfficiency : 0;
-
-      return {
-        key,
-        date: bank?.date || zoho?.date || '',
-        authNo: bank?.authNo || zoho?.authNo || '',
-        driver: bank?.driver || zoho?.driver || '',
-        vehicle: bank?.vehicle || zoho?.vehicle || '',
-        department: bank?.department || zoho?.department || '',
-        costCenter: bank?.costCenter || zoho?.costCenter || '',
-        bankAmount,
-        zohoAmount,
-        variance,
-        bankLitres,
-        zohoLitres,
-        distance,
-        efficiency,
-        status,
-        issue
-      };
-    }).sort((a, b) => a.date.localeCompare(b.date) || a.authNo.localeCompare(b.authNo));
-
-    updateFilters();
-    renderAll();
-    if (state.reconciled.length && appsScriptReady()) {
-      postToAppsScript({
-        action: 'uploadReconciledRows',
-        spreadsheetId: SHEET_CONFIG.spreadsheetId,
-        spreadsheetName: SHEET_CONFIG.spreadsheetName,
-        sheetTab: SHEET_CONFIG.sheetTab,
-        rows: state.reconciled
-      }).catch(() => {});
-    }
-  }
-
-  function populateFile(fileInputId, source) {
-    const file = $(fileInputId).files[0];
-    if (!file) return;
-    parseWorkbook(file).then(rows => {
-      let uploadRows = [];
-      if (source === 'zoho') {
-        state.zohoRaw = rows;
-        state.zohoRows = rows.map(r => mapCommonRow(r, 'zoho')).filter(r => r.authNo || r.amount || r.litres || r.vehicle || r.driver);
-        uploadRows = state.zohoRows;
-      } else {
-        state.bankRaw = rows;
-        state.bankRows = rows.map(r => mapCommonRow(r, 'bank')).filter(r => r.authNo || r.amount || r.litres || r.vehicle || r.driver);
-        uploadRows = state.bankRows;
-      }
-      $('loadStatus').textContent = `Loaded ${state.zohoRows.length} Zoho rows and ${state.bankRows.length} bank rows. Target sheet: ${sheetInfoText()}`;
-      if (uploadRows.length && appsScriptReady()) {
-        postToAppsScript({
-          action: 'uploadRawRows',
-          spreadsheetId: SHEET_CONFIG.spreadsheetId,
-          spreadsheetName: SHEET_CONFIG.spreadsheetName,
-          sheetTab: SHEET_CONFIG.sheetTab,
-          source,
-          rows: uploadRows
-        }).then(() => {
-          $('loadStatus').textContent = `Loaded ${state.zohoRows.length} Zoho rows and ${state.bankRows.length} bank rows. Uploaded to ${sheetInfoText()}.`;
-        }).catch(err => {
-          $('loadStatus').textContent = `Loaded locally, but upload failed: ${err.message}`;
-        });
-      }
-      updateTopSummary();
-      reconcile();
-    }).catch(err => {
-      $('loadStatus').textContent = `Failed to read ${source} file: ${err.message}`;
-    });
-  }
-
-  function uniqueValues(field) {
-    return Array.from(new Set(state.reconciled.map(r => text(r[field])).filter(Boolean))).sort();
-  }
-
-  function setSelectOptions(id, values, label) {
-    const sel = $(id);
-    const current = sel.value;
-    sel.innerHTML = `<option value="all">All ${label}</option>` + values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-    if ([...sel.options].some(o => o.value === current)) sel.value = current;
-  }
-
-  function updateFilters() {
-    setSelectOptions('filterDepartment', uniqueValues('department'), 'Departments');
-    setSelectOptions('filterCostCenter', uniqueValues('costCenter'), 'Cost Centers');
-    setSelectOptions('filterVehicle', uniqueValues('vehicle'), 'Vehicles');
-    setSelectOptions('filterDriver', uniqueValues('driver'), 'Drivers');
-  }
-
-  function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
-
-  function filteredRows() {
-    const dept = $('filterDepartment').value;
-    const cost = $('filterCostCenter').value;
-    const vehicle = $('filterVehicle').value;
-    const driver = $('filterDriver').value;
-    const q = lower($('searchInput').value);
-    return state.reconciled.filter(r => {
-      if (dept !== 'all' && r.department !== dept) return false;
-      if (cost !== 'all' && r.costCenter !== cost) return false;
-      if (vehicle !== 'all' && r.vehicle !== vehicle) return false;
-      if (driver !== 'all' && r.driver !== driver) return false;
-      if (state.currentStatus !== 'all' && r.status !== state.currentStatus) return false;
-      if (q && !`${r.authNo} ${r.driver} ${r.vehicle} ${r.department} ${r.costCenter} ${r.date}`.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }
-
-  function updateTopSummary() {
-    $('bankCount').textContent = state.bankRows.length;
-    $('zohoCount').textContent = state.zohoRows.length;
-    $('bankAmountTotal').textContent = money(state.bankRows.reduce((s, r) => s + num(r.amount), 0));
-    $('zohoAmountTotal').textContent = money(state.zohoRows.reduce((s, r) => s + num(r.amount), 0));
-    $('bankLitresTotal').textContent = state.bankRows.reduce((s, r) => s + num(r.litres), 0).toFixed(2);
-    $('zohoLitresTotal').textContent = state.zohoRows.reduce((s, r) => s + num(r.litres), 0).toFixed(2);
-  }
-
-  function renderKpis(rows) {
-    const matched = rows.filter(r => r.status === 'matched').length;
-    const exceptions = rows.filter(r => r.status !== 'matched').length;
-    const variance = rows.reduce((s, r) => s + r.variance, 0);
-    const effBase = rows.filter(r => r.efficiency > 0);
-    const avgEff = effBase.length ? effBase.reduce((s, r) => s + r.efficiency, 0) / effBase.length : 0;
-
-    $('kpiMatched').textContent = matched;
-    $('kpiExceptions').textContent = exceptions;
-    $('kpiVariance').textContent = money(variance);
-    $('kpiEfficiency').textContent = avgEff.toFixed(2);
-
-    $('pdfMatched').textContent = matched;
-    $('pdfExceptions').textContent = exceptions;
-    $('pdfVariance').textContent = money(variance);
-    $('pdfEfficiency').textContent = avgEff.toFixed(2);
-    $('reportMeta').textContent = `Generated ${new Date().toLocaleString()} · Filters: Department=${$('filterDepartment').value}, Cost Center=${$('filterCostCenter').value}, Vehicle=${$('filterVehicle').value}, Driver=${$('filterDriver').value}, Status=${state.currentStatus}`;
-  }
-
-  function renderReconTable(rows) {
-    $('reconTableBody').innerHTML = rows.length ? rows.map(r => {
-      let badge = `<span class="status-ok">Matched</span>`;
-      if (r.status === 'mismatch') badge = `<span class="status-mismatch">Variance</span>`;
-      if (r.status === 'missing') badge = `<span class="status-missing">${escapeHtml(r.issue)}</span>`;
-      return `<tr>
-        <td>${escapeHtml(r.date)}</td>
-        <td>${escapeHtml(r.authNo || 'Missing')}</td>
-        <td>${escapeHtml(r.driver)}</td>
-        <td>${escapeHtml(r.vehicle)}</td>
-        <td>${escapeHtml(r.department)}</td>
-        <td>${escapeHtml(r.costCenter)}</td>
-        <td>${money(r.bankAmount)}</td>
-        <td>${money(r.zohoAmount)}</td>
-        <td class="${r.variance < 0 ? 'text-danger' : 'text-success'}">${money(r.variance)}</td>
-        <td>${r.bankLitres.toFixed(2)}</td>
-        <td>${r.zohoLitres.toFixed(2)}</td>
-        <td>${badge}</td>
-      </tr>`;
-    }).join('') : `<tr><td colspan="12" class="text-center py-4">Load files to begin reconciliation.</td></tr>`;
-  }
-
-  function renderEfficiency(rows) {
-    const effRows = rows.filter(r => (r.distance > 0) || (r.bankLitres > 0) || (r.zohoLitres > 0));
-    $('efficiencyTableBody').innerHTML = effRows.length ? effRows.map(r => {
-      const litres = r.bankLitres || r.zohoLitres;
-      return `<tr>
-        <td>${escapeHtml(r.vehicle || 'Unknown')}</td>
-        <td>${escapeHtml(r.driver || 'Unknown')}</td>
-        <td>${escapeHtml(r.department || 'Unknown')}</td>
-        <td>${r.distance.toFixed(2)}</td>
-        <td>${litres.toFixed(2)}</td>
-        <td>${r.efficiency ? r.efficiency.toFixed(2) : '0.00'}</td>
-      </tr>`;
-    }).join('') : `<tr><td colspan="6" class="text-center py-4">No distance and litres data available for efficiency yet.</td></tr>`;
-  }
-
-  function groupedSummary(rows, field) {
-    const map = new Map();
-    rows.forEach(r => {
-      const key = text(r[field]) || 'Unspecified';
-      if (!map.has(key)) map.set(key, { group: key, bankAmount: 0, zohoAmount: 0, variance: 0, bankLitres: 0, zohoLitres: 0, count: 0 });
-      const item = map.get(key);
-      item.bankAmount += r.bankAmount;
-      item.zohoAmount += r.zohoAmount;
-      item.variance += r.variance;
-      item.bankLitres += r.bankLitres;
-      item.zohoLitres += r.zohoLitres;
-      item.count += 1;
-    });
-    return Array.from(map.values()).sort((a,b) => Math.abs(b.variance) - Math.abs(a.variance) || a.group.localeCompare(b.group));
-  }
-
-  function renderSummaryTable(rows) {
-    const mode = $('summaryMode').value;
-    const fieldMap = { costCenter:'costCenter', department:'department', vehicle:'vehicle', driver:'driver' };
-    const grouped = groupedSummary(rows, fieldMap[mode]);
-    $('summaryTableBody').innerHTML = grouped.length ? grouped.map(r => `<tr>
-      <td>${escapeHtml(r.group)}</td>
-      <td>${money(r.bankAmount)}</td>
-      <td>${money(r.zohoAmount)}</td>
-      <td class="${r.variance < 0 ? 'text-danger' : 'text-success'}">${money(r.variance)}</td>
-      <td>${r.bankLitres.toFixed(2)}</td>
-      <td>${r.zohoLitres.toFixed(2)}</td>
-      <td>${r.count}</td>
-    </tr>`).join('') : `<tr><td colspan="7" class="text-center py-4">No summary available.</td></tr>`;
-    renderChart(grouped.slice(0, 8));
-  }
-
-  function renderChart(grouped) {
-    const ctx = $('varianceChart').getContext('2d');
-    if (state.chart) state.chart.destroy();
-    state.chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: grouped.map(g => g.group),
-        datasets: [
-          { label: 'Bank Amount', data: grouped.map(g => g.bankAmount) },
-          { label: 'Zoho Amount', data: grouped.map(g => g.zohoAmount) },
-          { label: 'Variance', data: grouped.map(g => g.variance) }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } },
-        scales: { x: { ticks: { maxRotation: 40, minRotation: 0 } }, y: { beginAtZero: true } }
-      }
-    });
-  }
-
-
-  async function loadFuelLogTransactions() {
-    const tbody = $('fuelLogTableBody');
-    if (!tbody) return;
-
-    if (!appsScriptReady()) {
-      setConnectionStatus('bad', 'Set Apps Script URL');
-      tbody.innerHTML = '<tr><td colspan="24" class="text-center py-4">Set your deployed Apps Script URL to load fuel log transactions.</td></tr>';
-      return;
-    }
-
-    setConnectionStatus('warn', 'Loading transactions');
-    tbody.innerHTML = '<tr><td colspan="24" class="text-center py-4">Loading fuel transactions...</td></tr>';
-
-    try {
-      const url = `${SHEET_CONFIG.appsScriptUrl}?action=getFuelLog&spreadsheetId=${encodeURIComponent(SHEET_CONFIG.spreadsheetId)}&sheetTab=${encodeURIComponent(SHEET_CONFIG.sheetTab)}&_=${Date.now()}`;
-      const resp = await fetch(url, { cache: 'no-store' });
-      const data = await resp.json();
-
-      let rows = [];
-      if (Array.isArray(data)) rows = data;
-      else if (Array.isArray(data.rows)) rows = data.rows;
-      else if (Array.isArray(data.data)) rows = data.data;
-
-      if (rows.length && Array.isArray(rows[0])) {
-        const headers = rows[0].map(h => String(h || '').trim());
-        rows = rows.slice(1).map(r => Object.fromEntries(headers.map((h, i) => [h, r[i]])));
-      }
-
-      const field = (r, names) => {
-        for (const name of names) {
-          if (r[name] !== undefined && r[name] !== null && String(r[name]).trim() !== '') return r[name];
-        }
-        return '';
-      };
-
-      const normalizedRows = rows.map(r => ({
-        timestamp: field(r, ['Timestamp']),
-        date: field(r, ['Date', 'Transaction Date']),
-        driver: field(r, ['Driver', 'Driver Name']),
-        vehicle: field(r, ['Vehicle', 'Vehicle Reg No', 'Vehicle Registration']),
-        erNumber: field(r, ['ER Number', 'ER No', 'Auth No', 'Authorization No', 'Authorisation No']),
-        merchant: field(r, ['Merchant']),
-        odoStart: field(r, ['Odo Start']),
-        odoFinish: field(r, ['Odo Finish']),
-        fuelType: field(r, ['Fuel Type']),
-        pricePerL: field(r, ['Price/L', 'Price per L', 'Price Per L']),
-        liters: field(r, ['Liters', 'Litres']),
-        fuelTotal: field(r, ['Fuel Total']),
-        lubrication: field(r, ['Lubrication']),
-        lubeCost: field(r, ['Lube Cost']),
-        tolls: field(r, ['Tolls']),
-        tollTotal: field(r, ['Toll Total']),
-        grandTotal: field(r, ['Grand Total']),
-        costCenter: field(r, ['Cost Center', 'CostCenter', 'Cost Centre']),
-        department: field(r, ['Department']),
-        notes: field(r, ['Notes']),
-        kmTraveled: field(r, ['KM Traveled', 'Km Traveled']),
-        kmPerLiter: field(r, ['KM/Liter', 'KM/Litre', 'Km/Liter', 'Km/Litre']),
-        submissionId: field(r, ['Submission ID']),
-        status: field(r, ['Status'])
-      })).filter(r => Object.values(r).some(v => String(v).trim() !== ''));
-
-      const cell = (v) => escapeHtml(String(v ?? ''));
-      const moneyCell = (v) => money(num(v || 0));
-      const numCell = (v) => {
-        if (v === '' || v === null || v === undefined) return '';
-        return num(v).toFixed(2);
-      };
-
-      tbody.innerHTML = normalizedRows.length ? normalizedRows.map(r => `
-        <tr>
-          <td>${cell(r.timestamp)}</td>
-          <td>${cell(r.date)}</td>
-          <td>${cell(r.driver)}</td>
-          <td>${cell(r.vehicle)}</td>
-          <td>${cell(r.erNumber)}</td>
-          <td>${cell(r.merchant)}</td>
-          <td>${numCell(r.odoStart)}</td>
-          <td>${numCell(r.odoFinish)}</td>
-          <td>${cell(r.fuelType)}</td>
-          <td>${moneyCell(r.pricePerL)}</td>
-          <td>${numCell(r.liters)}</td>
-          <td>${moneyCell(r.fuelTotal)}</td>
-          <td>${cell(r.lubrication)}</td>
-          <td>${moneyCell(r.lubeCost)}</td>
-          <td>${cell(r.tolls)}</td>
-          <td>${moneyCell(r.tollTotal)}</td>
-          <td>${moneyCell(r.grandTotal)}</td>
-          <td>${cell(r.costCenter)}</td>
-          <td>${cell(r.department)}</td>
-          <td>${cell(r.notes)}</td>
-          <td>${numCell(r.kmTraveled)}</td>
-          <td>${numCell(r.kmPerLiter)}</td>
-          <td>${cell(r.submissionId)}</td>
-          <td>${cell(r.status)}</td>
-        </tr>
-      `).join('') : '<tr><td colspan="24" class="text-center py-4">No fuel transactions returned from the Fuel Log tab.</td></tr>';
-
-      setConnectionStatus('ok', normalizedRows.length ? `Connected · ${normalizedRows.length} rows` : 'Connected · 0 rows');
-      $('loadStatus').textContent = `Loaded ${normalizedRows.length} fuel log transactions from ${SHEET_CONFIG.spreadsheetId} / ${SHEET_CONFIG.sheetTab}`;
-    } catch (err) {
-      console.error(err);
-      setConnectionStatus('bad', 'Connection failed');
-      tbody.innerHTML = `<tr><td colspan="24" class="text-center py-4">Failed to load fuel transactions: ${escapeHtml(err.message || 'Unknown error')}</td></tr>`;
-    }
-  }
-
-  function renderAll() {
-    const rows = filteredRows();
-    renderKpis(rows);
-    renderReconTable(rows);
-    renderEfficiency(rows);
-    renderSummaryTable(rows);
-  }
-
-  function downloadExcel() {
-    const rows = filteredRows();
-    const wb = XLSX.utils.book_new();
-    const reconSheet = rows.map(r => ({
-      Date: r.date,
-      AuthNo: r.authNo,
-      Driver: r.driver,
-      Vehicle: r.vehicle,
-      Department: r.department,
-      CostCenter: r.costCenter,
-      BankAmount: r.bankAmount,
-      ZohoAmount: r.zohoAmount,
-      Variance: r.variance,
-      BankLitres: r.bankLitres,
-      ZohoLitres: r.zohoLitres,
-      Distance: r.distance,
-      EfficiencyKmPerLitre: r.efficiency,
-      Status: r.status,
-      Issue: r.issue
-    }));
-    const summarySheet = groupedSummary(rows, $('summaryMode').value === 'costCenter' ? 'costCenter' : $('summaryMode').value).map(r => ({
-      Group: r.group,
-      BankAmount: r.bankAmount,
-      ZohoAmount: r.zohoAmount,
-      Variance: r.variance,
-      BankLitres: r.bankLitres,
-      ZohoLitres: r.zohoLitres,
-      Records: r.count
-    }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reconSheet), 'Reconciliation');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summarySheet), 'Summary');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.bankRows), 'Bank Raw');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.zohoRows), 'Zoho Raw');
-    XLSX.writeFile(wb, `fuel_reconciliation_${new Date().toISOString().slice(0,10)}.xlsx`);
-  }
-
-  function downloadPdf() {
-    const el = $('pdfReportRoot');
-    html2pdf().from(el).set({
-      margin: 0.4,
-      filename: `fuel_reconciliation_${new Date().toISOString().slice(0,10)}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-    }).save();
-  }
-
-  $('zohoFile').addEventListener('change', () => populateFile('zohoFile', 'zoho'));
-  $('bankFile').addEventListener('change', () => populateFile('bankFile', 'bank'));
-  $('reconcileBtn').addEventListener('click', reconcile);
-  $('filterDepartment').addEventListener('change', renderAll);
-  $('filterCostCenter').addEventListener('change', renderAll);
-  $('filterVehicle').addEventListener('change', renderAll);
-  $('filterDriver').addEventListener('change', renderAll);
-  $('searchInput').addEventListener('input', renderAll);
-  $('summaryMode').addEventListener('change', renderAll);
-  $('downloadExcelBtn').addEventListener('click', downloadExcel);
-  $('downloadPdfBtn').addEventListener('click', downloadPdf);
-
-  document.querySelectorAll('.filter-chip').forEach(chip => {
-    chip.addEventListener('click', function() {
-      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-      this.classList.add('active');
-      state.currentStatus = this.dataset.status;
-      renderAll();
-    });
-  });
-
-  updateTopSummary();
-  renderAll();
-  testAppsScriptConnection();
-  loadFuelLogTransactions();
-  $('loadStatus').textContent = `Target sheet for transactions: ${SHEET_CONFIG.spreadsheetId} / ${SHEET_CONFIG.sheetTab}`;
-})();
+  tbody.appendChild(tr);
+ });
+}
 </script>
 </body>
 </html>
