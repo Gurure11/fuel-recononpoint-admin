@@ -3,35 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fuel Reconciliation (Bank vs Zoho vs Driver)</title>
+<title>OnPoint Fuel Reconciliation System</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body{font-family:Arial;background:#f4f6f9;padding:20px}
-.container{max-width:1200px;margin:auto;background:#fff;padding:20px;border-radius:12px}
+body{font-family:Arial;background:#eef4fa;padding:20px}
+.container{max-width:1400px;margin:auto;background:#fff;padding:20px;border-radius:14px}
 button{padding:10px 15px;border:none;background:#0b2b4a;color:#fff;border-radius:6px;cursor:pointer}
+input,select{padding:8px;margin:5px 0;width:100%}
 table{width:100%;border-collapse:collapse;margin-top:20px}
-th,td{padding:8px;border:1px solid #ddd;font-size:13px}
+th,td{padding:8px;border:1px solid #ddd;font-size:12px}
 th{background:#0b2b4a;color:#fff}
-.match{background:#d4edda}
-.mismatch{background:#f8d7da}
-.missing{background:#fff3cd}
+.match{background:#dff5e3}
+.mismatch{background:#fce3e3}
+.missing{background:#fff0d8}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 </style>
 </head>
 <body>
 <div class="container">
-<h2>3-Way Fuel Reconciliation</h2>
+<h2>Fuel Reconciliation System (Bank + Zoho + Driver Log)</h2>
 
-<label>Upload Zoho</label>
+<div class="grid">
+<div>
+<label>Upload Zoho File</label>
 <input type="file" id="zoho">
-
-<label>Upload Bank</label>
+</div>
+<div>
+<label>Upload Bank File</label>
 <input type="file" id="bank">
+</div>
+<div>
+<label>Filter View</label>
+<select id="groupBy">
+<option value="vehicle">Vehicle</option>
+<option value="costCenter">Cost Center</option>
+<option value="driver">Driver</option>
+<option value="department">Department</option>
+</select>
+</div>
+</div>
 
-<label>Upload Driver Log</label>
-<input type="file" id="driver">
+<br>
+<button onclick="reconcile()">Run Reconciliation</button>
+<button onclick="exportExcel()">Export Excel</button>
+<button onclick="exportCSV()">Export CSV</button>
 
-<br><br>
-<button onclick="reconcile()">Reconcile</button>
+<canvas id="pieChart"></canvas>
 
 <table id="table">
 <thead>
@@ -39,11 +57,13 @@ th{background:#0b2b4a;color:#fff}
 <th>ER No</th>
 <th>Vehicle</th>
 <th>Driver</th>
+<th>Cost Center</th>
+<th>Department</th>
 <th>Bank</th>
 <th>Zoho</th>
 <th>Driver Log</th>
-<th>Bank-Zoho</th>
-<th>Bank-Driver</th>
+<th>Variance (B-Z)</th>
+<th>Variance (B-D)</th>
 <th>Status</th>
 </tr>
 </thead>
@@ -52,93 +72,101 @@ th{background:#0b2b4a;color:#fff}
 </div>
 
 <script>
-let zohoData=[], bankData=[], driverData=[];
+const SHEET_ID="1SnhLTWgzJfkKNmIvtj8uwa-8x7TsnRtqkfX3deEuHIQ";
+const SHEET_NAME="Fuel Log";
 
-function readFile(file, callback){
+let zoho=[], bank=[], driverLog=[];
+
+function readFile(file, cb){
  const reader=new FileReader();
  reader.onload=e=>{
   const wb=XLSX.read(e.target.result,{type:'array'});
-  const data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-  callback(data);
+  cb(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
  };
  reader.readAsArrayBuffer(file);
 }
 
-document.getElementById('zoho').onchange=e=>readFile(e.target.files[0],d=>zohoData=d);
-document.getElementById('bank').onchange=e=>readFile(e.target.files[0],d=>bankData=d);
-document.getElementById('driver').onchange=e=>readFile(e.target.files[0],d=>driverData=d);
+document.getElementById('zoho').onchange=e=>readFile(e.target.files[0],d=>zoho=d);
+document.getElementById('bank').onchange=e=>readFile(e.target.files[0],d=>bank=d);
 
-function getKey(row){
- return (row['ER No']||row['Auth No']||row['ER Number']||'').toString().trim();
+async function loadDriverLog(){
+ const url=`https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
+ const res=await fetch(url);
+ driverLog=await res.json();
 }
 
-function getAmount(row){
- return Number(row['Amount']||row['Fuel Total']||row['Grand Total']||0);
-}
+function key(r){return (r['ER No']||r['Auth No']||r['ER Number']||'').toString().trim();}
+function num(v){return Number(String(v||0).replace(/[^0-9.-]/g,''))||0;}
 
-function reconcile(){
+async function reconcile(){
+ await loadDriverLog();
  const map={};
 
- zohoData.forEach(r=>{
-  const k=getKey(r);
+ zoho.forEach(r=>{
+  const k=key(r);
   if(!map[k]) map[k]={};
-  map[k].zoho=getAmount(r);
-  map[k].vehicle=r['Vehicle']||'';
-  map[k].driver=r['Driver']||'';
+  map[k].zoho=num(r.Amount);
+  map[k].vehicle=r.Vehicle||'';
+  map[k].driver=r.Driver||'';
+  map[k].costCenter=r['Cost Center']||'';
+  map[k].department=r.Department||'';
  });
 
- bankData.forEach(r=>{
-  const k=getKey(r);
+ bank.forEach(r=>{
+  const k=key(r);
   if(!map[k]) map[k]={};
-  map[k].bank=getAmount(r);
-  map[k].vehicle=map[k].vehicle||r['Vehicle'];
-  map[k].driver=map[k].driver||r['Driver'];
+  map[k].bank=num(r.Amount);
  });
 
- driverData.forEach(r=>{
-  const k=getKey(r);
+ driverLog.forEach(r=>{
+  const k=key(r);
   if(!map[k]) map[k]={};
-  map[k].driverAmt=getAmount(r);
-  map[k].vehicle=map[k].vehicle||r['Vehicle'];
-  map[k].driver=map[k].driver||r['Driver'];
+  map[k].driverAmt=num(r['Fuel Total']||r['Grand Total']);
  });
 
  const tbody=document.querySelector('#table tbody');
  tbody.innerHTML='';
 
+ let summary={};
+
  Object.keys(map).forEach(k=>{
   const r=map[k];
-  const bank=r.bank||0;
-  const zoho=r.zoho||0;
-  const driver=r.driverAmt||0;
-
-  const v1=bank-zoho;
-  const v2=bank-driver;
+  const b=r.bank||0,z=r.zoho||0,d=r.driverAmt||0;
+  const v1=b-z,v2=b-d;
 
   let status='Matched',cls='match';
 
-  if(!r.bank||!r.zoho||!r.driverAmt){
-   status='Missing';cls='missing';
-  }else if(Math.abs(v1)>1||Math.abs(v2)>1){
-   status='Mismatch';cls='mismatch';
-  }
+  if(!r.bank||!r.zoho||!r.driverAmt){status='Missing';cls='missing';}
+  else if(Math.abs(v1)>1||Math.abs(v2)>1){status='Mismatch';cls='mismatch';}
 
   const tr=document.createElement('tr');
   tr.className=cls;
 
-  tr.innerHTML=`
-  <td>${k}</td>
-  <td>${r.vehicle||''}</td>
-  <td>${r.driver||''}</td>
-  <td>${bank.toFixed(2)}</td>
-  <td>${zoho.toFixed(2)}</td>
-  <td>${driver.toFixed(2)}</td>
-  <td>${v1.toFixed(2)}</td>
-  <td>${v2.toFixed(2)}</td>
-  <td>${status}</td>`;
+  tr.innerHTML=`<td>${k}</td><td>${r.vehicle||''}</td><td>${r.driver||''}</td><td>${r.costCenter||''}</td><td>${r.department||''}</td><td>${b.toFixed(2)}</td><td>${z.toFixed(2)}</td><td>${d.toFixed(2)}</td><td>${v1.toFixed(2)}</td><td>${v2.toFixed(2)}</td><td>${status}</td>`;
 
   tbody.appendChild(tr);
+
+  const group=r[document.getElementById('groupBy').value]||'Unknown';
+  if(!summary[group]) summary[group]=0;
+  summary[group]+=b;
  });
+
+ renderChart(summary);
+}
+
+function renderChart(summary){
+ const ctx=document.getElementById('pieChart');
+ new Chart(ctx,{type:'pie',data:{labels:Object.keys(summary),datasets:[{data:Object.values(summary)}]}});
+}
+
+function exportExcel(){
+ const wb=XLSX.utils.table_to_book(document.getElementById('table'));
+ XLSX.writeFile(wb,'fuel_report.xlsx');
+}
+
+function exportCSV(){
+ const wb=XLSX.utils.table_to_book(document.getElementById('table'));
+ XLSX.writeFile(wb,'fuel_report.csv');
 }
 </script>
 </body>
