@@ -88,7 +88,7 @@
 
   <section id="summaryPanel" class="panel">
     <div class="grid">
-      <div class="card" style="grid-column:span 2"><h3>Pie Chart by Vehicle Registration</h3><canvas id="pieChart"></canvas></div>
+      <div class="card" style="grid-column:span 2"><h3 id="pieChartTitle">Pie Chart by Vehicle Registration</h3><canvas id="pieChart"></canvas></div>
       <div class="card"><h3>Summary Table</h3><div class="scroll"><table id="summaryTable"><thead><tr><th>Group</th><th>Bank</th><th>Zoho</th><th>Driver Log</th><th>Bank-Zoho</th><th>Bank-Driver</th><th>Zoho-Driver</th><th>Records</th></tr></thead><tbody></tbody></table></div></div>
     </div>
   </section>
@@ -324,6 +324,7 @@ function makeReconRow(b,z,d){
     date: b?.date || z?.date || d?.date || '', er: b?.er || z?.er || d?.er || '',
     vehicle: b?.vehicle || z?.vehicle || d?.vehicle || '', driver: b?.driver || z?.driver || d?.driver || '',
     costCenter: b?.costCenter || z?.costCenter || d?.costCenter || '', department: b?.department || z?.department || d?.department || '',
+    driverCostCenter: d?.costCenter || '', driverDepartment: d?.department || '', driverVehicle: d?.vehicle || '',
     bankAmount, zohoAmount, driverAmount, varianceBZ, varianceBD, varianceZD, status, issue
   };
 }
@@ -382,14 +383,34 @@ function periodKey(dateStr){
   return `${y} W${String(week).padStart(2,'0')}`;
 }
 
+function summaryGroupLabel(r){
+  const groupBy = document.getElementById('groupBy').value;
+
+  // Cost Center view uses Driver Fuel Log fields as the source of truth, then splits further by Department and Vehicle Registration.
+  if (groupBy === 'costCenter') {
+    const costCenter = r.driverCostCenter || r.costCenter || 'Unknown Cost Center';
+    const department = r.driverDepartment || r.department || 'Unknown Department';
+    const vehicle = r.driverVehicle || r.vehicle || 'Unknown Vehicle';
+    return `${costCenter} · ${department} · ${vehicle}`;
+  }
+  if (groupBy === 'department') return r.department || 'Unknown Department';
+  if (groupBy === 'driver') return r.driver || 'Unknown Driver';
+  return r.vehicle || 'Unknown Vehicle';
+}
+
 function renderSummary(){
   const periodMode = document.getElementById('periodMode').value;
+  const groupBy = document.getElementById('groupBy').value;
   const summary = new Map();
-  reconRows.forEach(r=>{
-    let key = r.vehicle || 'Unknown';
+
+  // When Cost Center is selected, keep only rows carrying Driver Fuel Log context and group them by Cost Center -> Department -> Vehicle.
+  const sourceRows = groupBy === 'costCenter' ? reconRows.filter(r => r.driverAmount || r.driverCostCenter || r.driverDepartment || r.driverVehicle) : reconRows;
+
+  sourceRows.forEach(r=>{
+    let key = summaryGroupLabel(r);
     const pk = periodKey(r.date);
     if (periodMode !== 'all') key = `${pk} · ${key}`;
-    if (!summary.has(key)) summary.set(key,{group:key,bank:0,zoho:0,driver:0,varianceBZ:0,varianceBD:0,varianceZD:0,count:0});
+    if (!summary.has(key)) summary.set(key,{group:key,bank:0,zoho:0,driver:0,varianceBZ:0,varianceBD:0,varianceZD:0,count:0,costCenter:r.driverCostCenter || r.costCenter || 'Unknown Cost Center',department:r.driverDepartment || r.department || 'Unknown Department',vehicle:r.driverVehicle || r.vehicle || 'Unknown Vehicle'});
     const x = summary.get(key);
     x.bank += r.bankAmount;
     x.zoho += r.zohoAmount;
@@ -399,15 +420,36 @@ function renderSummary(){
     x.varianceZD += r.varianceZD;
     x.count++;
   });
-  const arr = Array.from(summary.values()).sort((a,b)=>Math.abs(b.varianceBD)-Math.abs(a.varianceBD) || b.bank-a.bank);
+
+  const arr = Array.from(summary.values()).sort((a,b)=>{
+    if (groupBy === 'costCenter') {
+      return String(a.costCenter).localeCompare(String(b.costCenter)) || String(a.department).localeCompare(String(b.department)) || String(a.vehicle).localeCompare(String(b.vehicle));
+    }
+    return Math.abs(b.varianceBD)-Math.abs(a.varianceBD) || b.bank-a.bank;
+  });
+
   document.querySelector('#summaryTable tbody').innerHTML = arr.map(x=>`<tr><td>${x.group}</td><td>${money(x.bank)}</td><td>${money(x.zoho)}</td><td>${money(x.driver)}</td><td>${money(x.varianceBZ)}</td><td>${money(x.varianceBD)}</td><td>${money(x.varianceZD)}</td><td>${x.count}</td></tr>`).join('') || '<tr><td colspan="8">No summary yet.</td></tr>';
   renderChart(arr);
 }
 
 function renderChart(arr){
   const ctx = document.getElementById('pieChart');
+  const groupBy = document.getElementById('groupBy').value;
+  const chartTitle = document.getElementById('pieChartTitle');
+  if (chartTitle) chartTitle.textContent = groupBy === 'costCenter' ? 'Pie Chart by Cost Center' : groupBy === 'department' ? 'Pie Chart by Department' : groupBy === 'driver' ? 'Pie Chart by Driver Name' : 'Pie Chart by Vehicle Registration';
   if (pieChart) pieChart.destroy();
-  pieChart = new Chart(ctx,{type:'pie',data:{labels:arr.map(x=>`${x.group} - ${money(x.bank)}`),datasets:[{data:arr.map(x=>x.bank)}]},options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:function(context){return `${context.label}`;}}}}}});
+
+  let chartRows = arr;
+  if (groupBy === 'costCenter') {
+    const costCenterTotals = new Map();
+    arr.forEach(x=>{
+      const key = x.costCenter || 'Unknown Cost Center';
+      costCenterTotals.set(key, (costCenterTotals.get(key) || 0) + x.driver);
+    });
+    chartRows = Array.from(costCenterTotals.entries()).map(([group, driver])=>({group, bank:driver, driver}));
+  }
+
+  pieChart = new Chart(ctx,{type:'pie',data:{labels:chartRows.map(x=>`${x.group} - ${money(groupBy === 'costCenter' ? x.driver : x.bank)}`),datasets:[{data:chartRows.map(x=>groupBy === 'costCenter' ? x.driver : x.bank)}]},options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:function(context){return `${context.label}`;}}}}}});
 }
 
 function updateKpis(){
