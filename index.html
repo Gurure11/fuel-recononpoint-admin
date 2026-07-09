@@ -12,13 +12,38 @@
     .container{max-width:1500px;margin:auto;background:#fff;padding:22px;border-radius:18px;box-shadow:0 10px 30px rgba(11,43,74,.08)}
     h2,h3{color:var(--blue);margin:.2rem 0 1rem}.muted{color:#617287;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:14px;margin:14px 0}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.kpi .label{font-size:12px;text-transform:uppercase;color:#65758a}.kpi .value{font-size:24px;font-weight:800;color:var(--blue)}
     label{font-size:13px;font-weight:700;color:#334155}input,select{padding:10px;margin:5px 0;width:100%;border:1px solid var(--line);border-radius:10px;background:#fff}button{padding:10px 15px;border:none;background:var(--blue);color:#fff;border-radius:999px;cursor:pointer;font-weight:700}button.secondary{background:#64748b}button.light{background:#e2e8f0;color:#0f172a}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    table{width:100%;border-collapse:collapse;margin-top:12px;background:#fff}th,td{padding:8px;border-bottom:1px solid #e5edf5;font-size:12px;text-align:left;vertical-align:top}th{background:var(--blue);color:#fff;position:sticky;top:0;z-index:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:14px}.match{background:var(--good)}.mismatch{background:var(--bad)}.missing{background:var(--warn)}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}.ok{background:var(--good);color:#166534}.err{background:var(--bad);color:#991b1b}.warn{background:var(--warn);color:#92400e}canvas{max-height:300px!important}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab{background:#e2e8f0;color:#0f172a}.tab.active{background:var(--blue);color:#fff}.panel{display:none}.panel.active{display:block}@media(max-width:1000px){.grid,.grid4{grid-template-columns:1fr}}
+    table{width:100%;border-collapse:collapse;margin-top:12px;background:#fff}th,td{padding:8px;border-bottom:1px solid #e5edf5;font-size:12px;text-align:left;vertical-align:top}th{background:var(--blue);color:#fff;position:sticky;top:0;z-index:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:14px}.match{background:var(--good)}.mismatch{background:var(--bad)}.missing{background:var(--warn)}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}.ok{background:var(--good);color:#166534}.err{background:var(--bad);color:#991b1b}.warn{background:var(--warn);color:#92400e}canvas{max-height:300px!important}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab{background:#e2e8f0;color:#0f172a}.tab.active{background:var(--blue);color:#fff}.panel{display:none}.panel.active{display:block}.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center}.login-card{width:100%;max-width:430px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:26px;box-shadow:0 14px 38px rgba(11,43,74,.13)}.login-card h2{text-align:center;margin-bottom:6px}.login-card .muted{text-align:center;margin-bottom:16px}.login-error{display:none;background:var(--bad);color:#991b1b;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;font-weight:700}.login-success{display:none;background:var(--good);color:#166534;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;font-weight:700}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.user-chip{background:#eef4fa;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700;color:var(--blue)}@media(max-width:1000px){.grid,.grid4{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
-<div class="container">
-  <h2>OnPoint Fuel Reconciliation System</h2>
-  <div class="muted">Upload Bank file, upload Zoho document, pull Driver Fuel Log from Google Sheets, reconcile by Report_number / ER number, and export the variance report.</div>
+<div id="loginPage" class="login-wrap">
+  <div class="login-card">
+    <h2>OnPoint Fuel Reconciliation System</h2>
+    <div class="muted">Login with your username and password from the <strong>Users</strong> sheet.</div>
+    <label>Username</label>
+    <input type="text" id="loginUsername" autocomplete="username" placeholder="Enter username" />
+    <label>Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Enter password" />
+    <div class="actions">
+      <button id="loginBtn" type="button">Login</button>
+    </div>
+    <div id="loginError" class="login-error"></div>
+    <div id="loginSuccess" class="login-success"></div>
+    <div class="muted" style="margin-top:12px;text-align:left">Sheet ID: <strong>1SnhLTWgzJfkKNmIvtj8uwa-8x7TsnRtqkfX3deEuHIQ</strong><br>Users tab: <strong>Users</strong></div>
+  </div>
+</div>
+
+<div class="container" id="appContainer" style="display:none">
+  <div class="topbar">
+    <div>
+      <h2>OnPoint Fuel Reconciliation System</h2>
+      <div class="muted">Upload Bank file, upload Zoho document, pull Driver Fuel Log from Google Sheets, reconcile by Report_number / ER number, and export the variance report.</div>
+    </div>
+    <div class="actions" style="margin-top:0">
+      <span id="currentUserChip" class="user-chip">Logged in</span>
+      <button id="logoutBtn" class="light" type="button">Logout</button>
+    </div>
+  </div>
 
   <div class="card">
     <div class="grid">
@@ -121,14 +146,16 @@
 
 <script>
 const SHEET_ID = '1SnhLTWgzJfkKNmIvtj8uwa-8x7TsnRtqkfX3deEuHIQ';
+const USERS_TAB = 'Users';
 const FUEL_LOG_TAB = 'Fuel Log';
 const FUEL_RECON_TAB = 'Fuel Recon';
 
 // Optional: paste a deployed Apps Script web app URL here to write results back to Fuel Recon.
 // Without Apps Script, browser-only HTML can read public sheets but cannot securely write to Google Sheets.
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5wYxPqhPjEc7qE6C1t_nUC1nKoLX26_scqJv4doPKnvZu8kalpj6ifZoYWVgh8Zc7aA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMdKd7b5d6z-bJrNOFhdPbUVwuravhaMIwX0I12ehIHcXJDjKF6nDx2BgLGqGOYbs8Xw/exec';
 
 let rawBank = [], rawZoho = [], rawDriver = [];
+let rawUsers = [], currentUser = null;
 let bankRows = [], zohoRows = [], driverRows = [], reconRows = [];
 let pieChart = null;
 
@@ -146,6 +173,116 @@ const aliases = {
   km: ['km traveled','km travelled','distance','distance covered','km','kilometers','kilometres'],
   status: ['status','approval status']
 };
+
+
+function userField(row, names){
+  const keys = Object.keys(row || {});
+  const wanted = names.map(norm);
+  for (const key of keys) if (wanted.includes(norm(key))) return row[key];
+  for (const key of keys) if (wanted.some(w => norm(key).includes(w) || w.includes(norm(key)))) return row[key];
+  return '';
+}
+function showLoginMessage(type, msg){
+  const err = document.getElementById('loginError');
+  const ok = document.getElementById('loginSuccess');
+  if (!err || !ok) return;
+  err.style.display = 'none'; ok.style.display = 'none';
+  if (type === 'error') { err.textContent = msg; err.style.display = 'block'; }
+  if (type === 'success') { ok.textContent = msg; ok.style.display = 'block'; }
+}
+async function apiPost(payload){
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('/exec') === -1) {
+    throw new Error('APPS_SCRIPT_URL must be the deployed Apps Script Web App URL ending in /exec.');
+  }
+  const res = await fetch(APPS_SCRIPT_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(payload || {})
+  });
+  if (!res.ok) throw new Error(`Apps Script HTTP ${res.status}`);
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('Apps Script did not return valid JSON. Deploy Web App as Execute as Me, Anyone with the link, New version.'); }
+}
+async function apiGet(action, params){
+  params = params || {};
+  const url = APPS_SCRIPT_URL + '?action=' + encodeURIComponent(action) + '&cacheBust=' + Date.now() + Object.keys(params).map(k => '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('');
+  const res = await fetch(url,{cache:'no-store'});
+  if (!res.ok) throw new Error(`Apps Script HTTP ${res.status}`);
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { throw new Error('Apps Script did not return valid JSON. Check deployment URL.'); }
+}
+async function fetchUsers(){
+  const result = await apiGet('getUsers', {sheetId:SHEET_ID, sheetTab:USERS_TAB});
+  if (!result || result.status === 'error' || result.success === false) throw new Error((result && result.message) || 'Could not load Users tab');
+  rawUsers = Array.isArray(result.users) ? result.users : [];
+  return rawUsers;
+}
+function isActiveUser(row){
+  const active = cleanText(userField(row,['IsActive','Active','Status','User Status'])).toLowerCase();
+  if (!active) return true;
+  return ['true','yes','y','active','1','enabled'].includes(active);
+}
+function buildUserSession(row){
+  return {
+    userId: cleanText(row.UserID || row.userId || row.ID || userField(row,['UserID','User Id','ID'])),
+    name: cleanText(row.Name || row.name || userField(row,['Name','Full Name','Employee Name'])) || cleanText(row.Username || row.username || userField(row,['Username','User Name'])),
+    email: cleanText(row.Email || row.email || userField(row,['Email','Email Address'])),
+    username: cleanText(row.Username || row.username || userField(row,['Username','User Name','Login','Login Name'])),
+    role: cleanText(row.Role || row.role || userField(row,['Role','User Role'])),
+    department: cleanText(row.Department || row.department || userField(row,['Department','Dept'])),
+    costCenter: cleanText(row.CostCenter || row['Cost Center'] || row.costCenter || userField(row,['Cost Center','Cost Centre','CostCenter','CostCentre']))
+  };
+}
+async function postLoginToSheet(user){
+  // Login is now handled directly by Apps Script, which updates LastLogin on the Users tab.
+  return Promise.resolve(user);
+}
+function openApp(user){
+  currentUser = user;
+  sessionStorage.setItem('fuelReconUser', JSON.stringify(user));
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+  const chip = document.getElementById('currentUserChip');
+  if (chip) chip.textContent = `${user.name || user.username || 'User'}${user.role ? ' · ' + user.role : ''}`;
+  loadDriverLog();
+  updateKpis();
+  updateMappingInfo();
+}
+async function handleLogin(){
+  const username = cleanText(document.getElementById('loginUsername').value);
+  const password = cleanText(document.getElementById('loginPassword').value);
+  if (!username || !password) { showLoginMessage('error','Enter username and password.'); return; }
+  showLoginMessage('success','Checking Apps Script connection...');
+  try{
+    const result = await apiPost({action:'login', username, password, sheetId:SHEET_ID, sheetTab:USERS_TAB});
+    if (!result || result.status === 'error' || result.success === false) {
+      showLoginMessage('error',(result && result.message) || 'Invalid login or inactive user.');
+      return;
+    }
+    const user = buildUserSession(result.user || {});
+    showLoginMessage('success', result.message || 'Login successful.');
+    openApp(user);
+  }catch(err){
+    showLoginMessage('error',`Could not connect to Apps Script login. ${err.message || err}`);
+  }
+}
+function logout(){
+  sessionStorage.removeItem('fuelReconUser');
+  currentUser = null;
+  document.getElementById('appContainer').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('loginPassword').value = '';
+}
+function initAuth(){
+  const saved = sessionStorage.getItem('fuelReconUser');
+  if (saved) {
+    try { openApp(JSON.parse(saved)); return; } catch(e) { sessionStorage.removeItem('fuelReconUser'); }
+  }
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('appContainer').style.display = 'none';
+}
 
 function norm(s){ return String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
 function cleanText(v){ return String(v ?? '').trim(); }
@@ -600,10 +737,12 @@ document.getElementById('downloadPdfBtn').addEventListener('click',downloadPdfRe
 document.getElementById('groupBy').addEventListener('change',renderSummary);
 document.getElementById('periodMode').addEventListener('change',renderSummary);
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.panel).classList.add('active');}));
+document.getElementById('loginBtn').addEventListener('click',handleLogin);
+document.getElementById('logoutBtn').addEventListener('click',logout);
+document.getElementById('loginUsername').addEventListener('keydown',e=>{ if(e.key === 'Enter') handleLogin(); });
+document.getElementById('loginPassword').addEventListener('keydown',e=>{ if(e.key === 'Enter') handleLogin(); });
 
-loadDriverLog();
-updateKpis();
-updateMappingInfo();
+initAuth();
 </script>
 </body>
 </html>
