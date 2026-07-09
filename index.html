@@ -18,7 +18,7 @@
 <body>
 <div class="container">
   <h2>OnPoint Fuel Reconciliation System</h2>
-  <div class="muted">Upload Bank file, pull Driver Fuel Log from Google Sheets, reconcile by ER/Auth number, and export the report.</div>
+  <div class="muted">Upload Bank file, upload Zoho document, pull Driver Fuel Log from Google Sheets, reconcile by Report_number / ER number, and export the variance report.</div>
 
   <div class="card">
     <div class="grid">
@@ -26,6 +26,12 @@
         <label>Upload Bank Statement (.xlsx, .xls, .csv)</label>
         <input type="file" id="bankFile" accept=".xlsx,.xls,.csv" />
         <div id="bankStatus" class="muted">No bank file loaded.</div>
+      </div>
+      <div>
+        <label>Upload Zoho Document (.xlsx, .xls, .csv)</label>
+        <input type="file" id="zohoFile" accept=".xlsx,.xls,.csv" />
+        <div id="zohoStatus" class="muted">No Zoho file loaded.</div>
+        <div class="muted">Zoho mapping: Vehicle Reg No. · report_number / Reference · Amount</div>
       </div>
       <div>
         <label>Summary View</label>
@@ -58,18 +64,23 @@
 
   <div class="grid4">
     <div class="kpi"><div class="label">Bank Total</div><div class="value" id="kpiBank">R0.00</div></div>
+    <div class="kpi"><div class="label">Zoho Total</div><div class="value" id="kpiZoho">R0.00</div></div>
     <div class="kpi"><div class="label">Driver Log Total</div><div class="value" id="kpiDriver">R0.00</div></div>
     <div class="kpi"><div class="label">Exceptions</div><div class="value" id="kpiExceptions">0</div></div>
+    <div class="kpi"><div class="label">Missing in Zoho</div><div class="value" id="kpiMissingZoho">0</div></div>
     <div class="kpi"><div class="label">Missing in Driver Log</div><div class="value" id="kpiMissingDriver">0</div></div>
     <div class="kpi"><div class="label">Duplicate ER Numbers</div><div class="value" id="kpiDuplicateEr">0</div></div>
   </div>
 
   <div class="grid" id="varianceKpiGrid">
+    <div class="kpi"><div class="label">Total Bank-Zoho Variance %</div><div class="value" id="kpiVarianceBZ">0.00%</div></div>
+    <div class="kpi"><div class="label">Total Zoho-Driver Variance %</div><div class="value" id="kpiVarianceZD">0.00%</div></div>
     <div class="kpi"><div class="label">Total Bank-Driver Variance %</div><div class="value" id="kpiVarianceBD">0.00%</div></div>
   </div>
 
   <div class="tabs">
     <button class="tab active" data-panel="reconPanel">Reconciliation</button>
+    <button class="tab" data-panel="zohoPanel">Zoho Uploaded</button>
     <button class="tab" data-panel="fuelLogPanel">Driver Fuel Log</button>
     <button class="tab" data-panel="summaryPanel">Summary & Charts</button>
     <button class="tab" data-panel="rawPanel">Uploaded Raw Data</button>
@@ -77,7 +88,13 @@
 
   <section id="reconPanel" class="panel active">
     <h3>Reconciliation Detail</h3>
-    <div class="scroll"><table id="reconTable"><thead><tr><th>Date</th><th>ER/Auth No</th><th>Vehicle</th><th>Driver</th><th>Cost Center</th><th>Department</th><th>Bank Amount</th><th>Driver Log Amount</th><th>Bank-Driver</th><th>Bank-Driver %</th><th>Status</th><th>Issue</th></tr></thead><tbody><tr><td colspan="12">Upload files and click Run Reconciliation.</td></tr></tbody></table></div>
+    <div class="scroll"><table id="reconTable"><thead><tr><th>Date</th><th>Report_number / ER No</th><th>Vehicle</th><th>Driver</th><th>Cost Center</th><th>Department</th><th>Bank Amount</th><th>Zoho Amount</th><th>Driver Log Amount</th><th>Bank-Zoho</th><th>Zoho-Driver</th><th>Bank-Driver</th><th>Bank-Zoho %</th><th>Zoho-Driver %</th><th>Bank-Driver %</th><th>Status</th><th>Issue</th></tr></thead><tbody><tr><td colspan="17">Upload Bank and Zoho files, load Fuel Log, then click Run Reconciliation.</td></tr></tbody></table></div>
+  </section>
+
+  <section id="zohoPanel" class="panel">
+    <h3>Zoho Uploaded Document</h3>
+    <div class="muted">This section maps Zoho columns: <strong>Vehicle Reg No.</strong>, <strong>report_number / Reference</strong>, and <strong>amount</strong>.</div>
+    <div class="scroll"><table id="zohoTable"><thead><tr><th>Date</th><th>Report_number / Reference</th><th>Vehicle Reg No.</th><th>Amount</th><th>Status</th></tr></thead><tbody><tr><td colspan="5">Zoho file not loaded yet.</td></tr></tbody></table></div>
   </section>
 
   <section id="fuelLogPanel" class="panel">
@@ -89,13 +106,14 @@
   <section id="summaryPanel" class="panel">
     <div class="grid">
       <div class="card" style="grid-column:span 2"><h3 id="pieChartTitle">Pie Chart by Vehicle Registration</h3><canvas id="pieChart"></canvas></div>
-      <div class="card"><h3>Summary Table</h3><div class="scroll"><table id="summaryTable"><thead><tr><th>Group</th><th>Bank</th><th>Driver Log</th><th>Bank-Driver</th><th>% Bank-Driver</th><th>Records</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card"><h3>Summary Table</h3><div class="scroll"><table id="summaryTable"><thead><tr><th>Group</th><th>Bank</th><th>Zoho</th><th>Driver Log</th><th>Bank-Zoho</th><th>Zoho-Driver</th><th>Bank-Driver</th><th>% Bank-Zoho</th><th>% Zoho-Driver</th><th>% Bank-Driver</th><th>Records</th></tr></thead><tbody></tbody></table></div></div>
     </div>
   </section>
 
   <section id="rawPanel" class="panel">
     <div class="grid">
       <div><h3>Bank Uploaded Rows</h3><div class="scroll"><table id="bankPreview"></table></div></div>
+      <div><h3>Zoho Uploaded Rows</h3><div class="scroll"><table id="zohoPreview"></table></div></div>
       <div><h3>Mapped Fields</h3><div id="mappingInfo" class="muted">No data mapped yet.</div></div>
     </div>
   </section>
@@ -110,17 +128,17 @@ const FUEL_RECON_TAB = 'Fuel Recon';
 // Without Apps Script, browser-only HTML can read public sheets but cannot securely write to Google Sheets.
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5wYxPqhPjEc7qE6C1t_nUC1nKoLX26_scqJv4doPKnvZu8kalpj6ifZoYWVgh8Zc7aA/exec';
 
-let rawBank = [], rawDriver = [];
-let bankRows = [], driverRows = [], reconRows = [];
+let rawBank = [], rawZoho = [], rawDriver = [];
+let bankRows = [], zohoRows = [], driverRows = [], reconRows = [];
 let pieChart = null;
 
 const aliases = {
-  er: ['er no','erno','er number','ernumber','auth no','authno','authorisation no','authorization no','authorisation number','authorization number','approval code','reference','report number','report no','reportnumber'],
+  er: ['er no','erno','er number','ernumber','auth no','authno','authorisation no','authorization no','authorisation number','authorization number','approval code','reference','tracking number','trackingnumber','report number','report no','reportnumber','report_number','reportnumberreference'],
   date: ['date','transaction date','swipe date','fuel date','doc date','timestamp','created time','created date'],
   amount: ['amount','transaction amount','swiped amount','rand value','value','fuel total','grand total','total','debit','paid amount'],
   fuelTotal: ['fuel total','fuel amount','fuel cost','grand total','amount','total'],
   litres: ['litres','liters','fuel litres','fuel liters','qty','quantity'],
-  vehicle: ['vehicle','vehicle reg','vehicle registration','vehicle reg no','vehicle registration no','vehicle number','reg no','registration','regnumber','fleet number'],
+  vehicle: ['vehicle','vehicle reg','vehicle registration','vehicle reg no','vehicle reg no.','vehicle registration no','vehicle number','reg no','registration','regnumber','fleet number'],
   driver: ['driver','driver name','employee name','staff name','name'],
   costCenter: ['cost center','cost centre','costcenter','costcentre','business unit','project','site'],
   department: ['department','dept','division','branch'],
@@ -214,10 +232,11 @@ function previewTable(id, rows){
 function updateMappingInfo(){
   document.getElementById('mappingInfo').innerHTML = `
     <strong>Bank mapped rows:</strong> ${bankRows.length}<br>
+    <strong>Zoho mapped rows:</strong> ${zohoRows.length}<br>
     <strong>Driver Fuel Log mapped rows:</strong> ${driverRows.length}<br><br>
-    Matching key used: ER/Auth/Report Number + Vehicle Registration where available.<br>
-    If ER/Auth is missing, the system falls back to the same vehicle registration number so Bank and Driver Fuel Log can still be compared.<br>
-    If rows still do not show, check that at least one column contains ER/Auth/Report number or vehicle registration, and one column contains Amount/Fuel Total/Grand Total.`;
+    Matching key used: <strong>Report_number / ER number</strong> first, then Vehicle Registration where available.<br>
+    Zoho expected columns include <strong>Vehicle Reg No.</strong>, <strong>report_number</strong> or <strong>Reference</strong>, and <strong>amount</strong>.<br>
+    The variance report compares Bank vs Zoho, Zoho vs Driver Fuel Log, and Bank vs Driver Fuel Log.`;
 }
 
 async function handleBankUpload(e){
@@ -225,6 +244,15 @@ async function handleBankUpload(e){
   bankRows = rawBank.map(r=>mapRow(r,'bank')).filter(r=>r.key || r.amount || r.vehicle || r.driver);
   document.getElementById('bankStatus').textContent = `Loaded ${rawBank.length} bank rows. Mapped ${bankRows.length}.`;
   previewTable('bankPreview', rawBank);
+  updateKpis(); updateMappingInfo();
+}
+
+async function handleZohoUpload(e){
+  rawZoho = await readUploadedFile(e.target.files[0]);
+  zohoRows = rawZoho.map(r=>mapRow(r,'zoho')).filter(r=>r.key || r.amount || r.vehicle);
+  document.getElementById('zohoStatus').textContent = `Loaded ${rawZoho.length} Zoho rows. Mapped ${zohoRows.length}.`;
+  previewTable('zohoPreview', rawZoho);
+  renderZoho();
   updateKpis(); updateMappingInfo();
 }
 
@@ -299,7 +327,7 @@ function findBestMatch(base, candidates, usedSet){
 }
 function findDuplicateErFlags(){
   const counts = new Map();
-  bankRows.concat(driverRows).forEach(r=>{
+  bankRows.concat(zohoRows, driverRows).forEach(r=>{
     const er = erValue(r);
     if (!er) return;
     counts.set(er, (counts.get(er) || 0) + 1);
@@ -307,42 +335,83 @@ function findDuplicateErFlags(){
   return counts;
 }
 
-function makeReconRow(b,d,duplicateCounts){
-  const bankAmount = b?.amount || 0, driverAmount = d?.amount || 0;
+function findByErOrBest(base, candidates, usedSet){
+  if (!base) return -1;
+  const baseEr = erValue(base);
+  let exact = -1;
+  if (baseEr) {
+    candidates.forEach((c,i)=>{
+      if (exact >= 0 || usedSet.has(i)) return;
+      if (erValue(c) === baseEr && sameVehicle(base,c)) exact = i;
+    });
+  }
+  if (exact >= 0) return exact;
+  return findBestMatch(base, candidates, usedSet);
+}
+
+function makeReconRow(b,z,d,duplicateCounts){
+  const bankAmount = b?.amount || 0, zohoAmount = z?.amount || 0, driverAmount = d?.amount || 0;
+  const varianceBZ = bankAmount - zohoAmount;
+  const varianceZD = zohoAmount - driverAmount;
   const varianceBD = bankAmount - driverAmount;
-  const varianceBDPct = percent(varianceBD, bankAmount);
-  const er = b?.er || d?.er || '';
-  const isDuplicateEr = er && (duplicateCounts?.get(norm(er)) || 0) > 2;
+  const er = b?.er || z?.er || d?.er || '';
+  const isDuplicateEr = er && (duplicateCounts?.get(norm(er)) || 0) > 3;
   let status = 'Matched', issue = 'Matched';
   const missing = [];
-  if (!b) missing.push('Bank'); if (!d) missing.push('Driver Log');
+  if (!b) missing.push('Bank');
+  if (!z) missing.push('Zoho');
+  if (!d) missing.push('Driver Log');
+  const variances = [];
+  if (b && z && Math.abs(varianceBZ) > 1) variances.push('Bank-Zoho variance');
+  if (z && d && Math.abs(varianceZD) > 1) variances.push('Zoho-Driver variance');
+  if (b && d && Math.abs(varianceBD) > 1) variances.push('Bank-Driver variance');
   if (missing.length) { status = 'Missing'; issue = 'Missing in ' + missing.join(', '); }
-  else if (Math.abs(varianceBD) > 1) { status = 'Mismatch'; issue = 'Bank-Driver variance'; }
+  if (variances.length) { status = status === 'Matched' ? 'Mismatch' : status; issue = issue === 'Matched' ? variances.join(', ') : issue + ', ' + variances.join(', '); }
   if (isDuplicateEr) {
     status = status === 'Matched' ? 'Duplicate ER' : status;
     issue = issue === 'Matched' ? 'Duplicate ER number' : issue + ', Duplicate ER number';
   }
   return {
-    date: b?.date || d?.date || '', er,
-    vehicle: b?.vehicle || d?.vehicle || '', driver: b?.driver || d?.driver || '',
+    date: b?.date || z?.date || d?.date || '', er,
+    vehicle: b?.vehicle || z?.vehicle || d?.vehicle || '', driver: b?.driver || d?.driver || '',
     costCenter: b?.costCenter || d?.costCenter || '', department: b?.department || d?.department || '',
     driverCostCenter: d?.costCenter || '', driverDepartment: d?.department || '', driverVehicle: d?.vehicle || '',
-    bankAmount, driverAmount, varianceBD, varianceBDPct, isDuplicateEr, status, issue
+    bankAmount, zohoAmount, driverAmount,
+    varianceBZ, varianceZD, varianceBD,
+    varianceBZPct: percent(varianceBZ, bankAmount),
+    varianceZDPct: percent(varianceZD, zohoAmount),
+    varianceBDPct: percent(varianceBD, bankAmount),
+    isDuplicateEr, status, issue
   };
 }
 function runReconciliation(){
+  const usedZoho = new Set();
   const usedDriver = new Set();
   const duplicateCounts = findDuplicateErFlags();
   const rows = [];
+
   bankRows.forEach(b=>{
-    const di = findBestMatch(b, driverRows, usedDriver);
+    const zi = findByErOrBest(b, zohoRows, usedZoho);
+    const z = zi >= 0 ? zohoRows[zi] : null;
+    if (zi >= 0) usedZoho.add(zi);
+    const baseForDriver = z || b;
+    const di = findByErOrBest(baseForDriver, driverRows, usedDriver);
     const d = di >= 0 ? driverRows[di] : null;
     if (di >= 0) usedDriver.add(di);
-    rows.push(makeReconRow(b,d,duplicateCounts));
+    rows.push(makeReconRow(b,z,d,duplicateCounts));
   });
+
+  zohoRows.forEach((z,zi)=>{
+    if (usedZoho.has(zi)) return;
+    const di = findByErOrBest(z, driverRows, usedDriver);
+    const d = di >= 0 ? driverRows[di] : null;
+    if (di >= 0) usedDriver.add(di);
+    rows.push(makeReconRow(null,z,d,duplicateCounts));
+  });
+
   driverRows.forEach((d,di)=>{
     if (usedDriver.has(di)) return;
-    rows.push(makeReconRow(null,d,duplicateCounts));
+    rows.push(makeReconRow(null,null,d,duplicateCounts));
   });
   reconRows = rows.sort((a,b)=>(a.date||'').localeCompare(b.date||'') || String(a.vehicle).localeCompare(String(b.vehicle)) || String(a.er).localeCompare(String(b.er)));
   renderRecon(); renderSummary(); updateKpis();
@@ -350,11 +419,18 @@ function runReconciliation(){
 }
 function renderRecon(){
   const tbody = document.querySelector('#reconTable tbody');
-  if (!reconRows.length) { tbody.innerHTML = '<tr><td colspan="12">No reconciliation records yet.</td></tr>'; return; }
+  if (!reconRows.length) { tbody.innerHTML = '<tr><td colspan="17">No reconciliation records yet.</td></tr>'; return; }
   tbody.innerHTML = reconRows.map(r=>{
     const cls = r.status === 'Matched' ? 'match' : r.status === 'Mismatch' || r.status === 'Duplicate ER' ? 'mismatch' : 'missing';
-    return `<tr class="${cls}"><td>${r.date}</td><td>${r.er}</td><td>${r.vehicle}</td><td>${r.driver}</td><td>${r.costCenter}</td><td>${r.department}</td><td>${money(r.bankAmount)}</td><td>${money(r.driverAmount)}</td><td>${money(r.varianceBD)}</td><td class="${varianceClass(r.varianceBD, r.bankAmount)}">${percentText(r.varianceBD, r.bankAmount)}</td><td>${r.status}</td><td>${r.issue}</td></tr>`;
+    return `<tr class="${cls}"><td>${r.date}</td><td>${r.er}</td><td>${r.vehicle}</td><td>${r.driver}</td><td>${r.costCenter}</td><td>${r.department}</td><td>${money(r.bankAmount)}</td><td>${money(r.zohoAmount)}</td><td>${money(r.driverAmount)}</td><td>${money(r.varianceBZ)}</td><td>${money(r.varianceZD)}</td><td>${money(r.varianceBD)}</td><td class="${varianceClass(r.varianceBZ, r.bankAmount)}">${percentText(r.varianceBZ, r.bankAmount)}</td><td class="${varianceClass(r.varianceZD, r.zohoAmount)}">${percentText(r.varianceZD, r.zohoAmount)}</td><td class="${varianceClass(r.varianceBD, r.bankAmount)}">${percentText(r.varianceBD, r.bankAmount)}</td><td>${r.status}</td><td>${r.issue}</td></tr>`;
   }).join('');
+}
+
+
+function renderZoho(){
+  const tbody = document.querySelector('#zohoTable tbody');
+  if (!zohoRows.length) { tbody.innerHTML = '<tr><td colspan="5">No Zoho rows loaded.</td></tr>'; return; }
+  tbody.innerHTML = zohoRows.map(r=>`<tr><td>${r.date}</td><td>${r.er}</td><td>${r.vehicle}</td><td>${money(r.amount)}</td><td>${r.status}</td></tr>`).join('');
 }
 
 function renderFuelLog(){
@@ -402,10 +478,13 @@ function renderSummary(){
     let key = summaryGroupLabel(r);
     const pk = periodKey(r.date);
     if (periodMode !== 'all') key = `${pk} · ${key}`;
-    if (!summary.has(key)) summary.set(key,{group:key,bank:0,driver:0,varianceBD:0,count:0,costCenter:r.driverCostCenter || r.costCenter || 'Unknown Cost Center',department:r.driverDepartment || r.department || 'Unknown Department',vehicle:r.driverVehicle || r.vehicle || 'Unknown Vehicle'});
+    if (!summary.has(key)) summary.set(key,{group:key,bank:0,zoho:0,driver:0,varianceBZ:0,varianceZD:0,varianceBD:0,count:0,costCenter:r.driverCostCenter || r.costCenter || 'Unknown Cost Center',department:r.driverDepartment || r.department || 'Unknown Department',vehicle:r.driverVehicle || r.vehicle || 'Unknown Vehicle'});
     const x = summary.get(key);
     x.bank += r.bankAmount;
+    x.zoho += r.zohoAmount;
     x.driver += r.driverAmount;
+    x.varianceBZ += r.varianceBZ;
+    x.varianceZD += r.varianceZD;
     x.varianceBD += r.varianceBD;
     x.count++;
   });
@@ -419,17 +498,20 @@ function renderSummary(){
 
   const totals = arr.reduce((t,x)=>{
     t.bank += x.bank;
+    t.zoho += x.zoho;
     t.driver += x.driver;
+    t.varianceBZ += x.varianceBZ;
+    t.varianceZD += x.varianceZD;
     t.varianceBD += x.varianceBD;
     t.count += x.count;
     return t;
-  }, {bank:0, driver:0, varianceBD:0, count:0});
+  }, {bank:0, zoho:0, driver:0, varianceBZ:0, varianceZD:0, varianceBD:0, count:0});
 
-  const rowsHtml = arr.map(x=>`<tr><td>${x.group}</td><td>${money(x.bank)}</td><td>${money(x.driver)}</td><td>${money(x.varianceBD)}</td><td class="${varianceClass(x.varianceBD, x.bank)}">${percentText(x.varianceBD, x.bank)}</td><td>${x.count}</td></tr>`).join('');
+  const rowsHtml = arr.map(x=>`<tr><td>${x.group}</td><td>${money(x.bank)}</td><td>${money(x.zoho)}</td><td>${money(x.driver)}</td><td>${money(x.varianceBZ)}</td><td>${money(x.varianceZD)}</td><td>${money(x.varianceBD)}</td><td class="${varianceClass(x.varianceBZ, x.bank)}">${percentText(x.varianceBZ, x.bank)}</td><td class="${varianceClass(x.varianceZD, x.zoho)}">${percentText(x.varianceZD, x.zoho)}</td><td class="${varianceClass(x.varianceBD, x.bank)}">${percentText(x.varianceBD, x.bank)}</td><td>${x.count}</td></tr>`).join('');
 
-  const totalRow = `<tr style="font-weight:bold; background:#eef4fa;"><td>TOTAL</td><td>${money(totals.bank)}</td><td>${money(totals.driver)}</td><td>${money(totals.varianceBD)}</td><td class="${varianceClass(totals.varianceBD, totals.bank)}">${percentText(totals.varianceBD, totals.bank)}</td><td>${totals.count}</td></tr>`;
+  const totalRow = `<tr style="font-weight:bold; background:#eef4fa;"><td>TOTAL</td><td>${money(totals.bank)}</td><td>${money(totals.zoho)}</td><td>${money(totals.driver)}</td><td>${money(totals.varianceBZ)}</td><td>${money(totals.varianceZD)}</td><td>${money(totals.varianceBD)}</td><td class="${varianceClass(totals.varianceBZ, totals.bank)}">${percentText(totals.varianceBZ, totals.bank)}</td><td class="${varianceClass(totals.varianceZD, totals.zoho)}">${percentText(totals.varianceZD, totals.zoho)}</td><td class="${varianceClass(totals.varianceBD, totals.bank)}">${percentText(totals.varianceBD, totals.bank)}</td><td>${totals.count}</td></tr>`;
 
-  document.querySelector('#summaryTable tbody').innerHTML = arr.length ? rowsHtml + totalRow : '<tr><td colspan="6">No summary yet.</td></tr>';
+  document.querySelector('#summaryTable tbody').innerHTML = arr.length ? rowsHtml + totalRow : '<tr><td colspan="11">No summary yet.</td></tr>';
   updateVarianceKpis(totals);
   renderChart(arr);
 }
@@ -457,28 +539,41 @@ function renderChart(arr){
 function updateVarianceKpis(totals){
   const safeTotals = totals || reconRows.reduce((t,r)=>{
     t.bank += r.bankAmount;
+    t.zoho += r.zohoAmount;
     t.driver += r.driverAmount;
+    t.varianceBZ += r.varianceBZ;
+    t.varianceZD += r.varianceZD;
     t.varianceBD += r.varianceBD;
     return t;
-  }, {bank:0, driver:0, varianceBD:0});
+  }, {bank:0, zoho:0, driver:0, varianceBZ:0, varianceZD:0, varianceBD:0});
+  document.getElementById('kpiVarianceBZ').textContent = percentText(safeTotals.varianceBZ, safeTotals.bank);
+  document.getElementById('kpiVarianceZD').textContent = percentText(safeTotals.varianceZD, safeTotals.zoho);
   document.getElementById('kpiVarianceBD').textContent = percentText(safeTotals.varianceBD, safeTotals.bank);
+  document.getElementById('kpiVarianceBZ').className = Math.abs(percent(safeTotals.varianceBZ, safeTotals.bank)) > 5 ? 'value err' : 'value';
+  document.getElementById('kpiVarianceZD').className = Math.abs(percent(safeTotals.varianceZD, safeTotals.zoho)) > 5 ? 'value err' : 'value';
   document.getElementById('kpiVarianceBD').className = Math.abs(percent(safeTotals.varianceBD, safeTotals.bank)) > 5 ? 'value err' : 'value';
 }
 
+
 function updateKpis(){
   const bankTotal = bankRows.reduce((s,r)=>s+r.amount,0);
+  const zohoTotal = zohoRows.reduce((s,r)=>s+r.amount,0);
   const driverTotal = driverRows.reduce((s,r)=>s+r.amount,0);
   document.getElementById('kpiBank').textContent = money(bankTotal);
+  document.getElementById('kpiZoho').textContent = money(zohoTotal);
   document.getElementById('kpiDriver').textContent = money(driverTotal);
   document.getElementById('kpiExceptions').textContent = reconRows.filter(r=>r.status!=='Matched').length;
-  document.getElementById('kpiMissingDriver').textContent = reconRows.filter(r=>r.bankAmount && !r.driverAmount).length;
+  document.getElementById('kpiMissingZoho').textContent = reconRows.filter(r=>r.bankAmount && !r.zohoAmount).length;
+  document.getElementById('kpiMissingDriver').textContent = reconRows.filter(r=>(r.bankAmount || r.zohoAmount) && !r.driverAmount).length;
   document.getElementById('kpiDuplicateEr').textContent = reconRows.filter(r=>r.isDuplicateEr).length;
   updateVarianceKpis();
 }
 
+
 function exportWorkbook(type){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reconRows), 'Fuel Recon');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(zohoRows), 'Zoho Mapped');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(driverRows), 'Driver Fuel Log');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bankRows), 'Bank Mapped');
   if (type === 'csv') XLSX.writeFile(wb, 'fuel_recon.csv');
@@ -496,6 +591,7 @@ function downloadPdfReport(){
 }
 
 document.getElementById('bankFile').addEventListener('change',handleBankUpload);
+document.getElementById('zohoFile').addEventListener('change',handleZohoUpload);
 document.getElementById('loadFuelLogBtn').addEventListener('click',loadDriverLog);
 document.getElementById('reconcileBtn').addEventListener('click',runReconciliation);
 document.getElementById('exportExcelBtn').addEventListener('click',()=>exportWorkbook('xlsx'));
