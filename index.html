@@ -98,9 +98,9 @@
   </div>
 
   <div class="grid" id="varianceKpiGrid">
-    <div class="kpi"><div class="label">Total Bank-Zoho Variance %</div><div class="value" id="kpiVarianceBZ">0.00%</div></div>
-    <div class="kpi"><div class="label">Total Zoho-Driver Variance %</div><div class="value" id="kpiVarianceZD">0.00%</div></div>
-    <div class="kpi"><div class="label">Total Bank-Driver Variance %</div><div class="value" id="kpiVarianceBD">0.00%</div></div>
+    <div class="kpi"><div class="label">Total Bank-Zoho Variance</div><div class="value" id="kpiVarianceBZAmount">R0.00</div><div class="muted" id="kpiVarianceBZ">0.00%</div></div>
+    <div class="kpi"><div class="label">Total Zoho-Driver Variance</div><div class="value" id="kpiVarianceZDAmount">R0.00</div><div class="muted" id="kpiVarianceZD">0.00%</div></div>
+    <div class="kpi"><div class="label">Total Bank-Driver Variance</div><div class="value" id="kpiVarianceBDAmount">R0.00</div><div class="muted" id="kpiVarianceBD">0.00%</div></div>
   </div>
 
   <div class="tabs">
@@ -292,7 +292,25 @@ function percentText(value, base){ return percent(value, base).toFixed(2) + '%';
 function varianceClass(value, base){ return Math.abs(percent(value, base)) > 5 ? 'mismatch' : ''; }
 function num(v){
   if (typeof v === 'number') return isFinite(v) ? v : 0;
-  return Number(String(v ?? '').replace(/,/g,'.').replace(/[^0-9.-]/g,'')) || 0;
+  let s = String(v ?? '').trim().replace(/\s/g,'').replace(/[^0-9,.-]/g,'');
+  if (!s) return 0;
+  const lastComma = s.lastIndexOf(',');
+  const lastDot = s.lastIndexOf('.');
+  if (lastComma >= 0 && lastDot >= 0) {
+    if (lastComma > lastDot) s = s.replace(/\./g,'').replace(',', '.');
+    else s = s.replace(/,/g,'');
+  } else if (lastComma >= 0) {
+    const decimals = s.length - lastComma - 1;
+    s = decimals === 2 ? s.replace(/\./g,'').replace(',', '.') : s.replace(/,/g,'');
+  } else {
+    const parts = s.split('.');
+    if (parts.length > 2) {
+      const decimal = parts.pop();
+      s = parts.join('') + '.' + decimal;
+    }
+  }
+  const n = Number(s);
+  return isFinite(n) ? n : 0;
 }
 function excelDate(v){
   if (v === null || v === undefined || v === '') return '';
@@ -316,6 +334,12 @@ function getField(row, group){
   for (const key of keys) if (wanted.some(w => norm(key).includes(w) || w.includes(norm(key)))) return row[key];
   return '';
 }
+function exactField(row, names){
+  const keys = Object.keys(row || {});
+  const wanted = names.map(norm);
+  for (const key of keys) if (wanted.includes(norm(key))) return row[key];
+  return '';
+}
 function erKey(row){ return norm(getField(row,'er')); }
 function regKeyValue(v){ return norm(String(v || '').toUpperCase().replace(/\s+/g,'')); }
 function regKey(row){ return regKeyValue(getField(row,'vehicle')); }
@@ -330,15 +354,22 @@ function makeMatchKey(row, source){
 
 function mapRow(row, source){
   const amountGroup = source === 'driver' ? 'fuelTotal' : 'amount';
+  const zohoVehicle = source === 'zoho' ? exactField(row,['reference_number','reference number']) : '';
+  const vehicleValue = zohoVehicle || getField(row,'vehicle');
+  const zohoEr = source === 'zoho' ? exactField(row,['report_number','report number','report no','report_number / reference']) : '';
+  const erValue = zohoEr || getField(row,'er');
+  const vehicleKey = regKeyValue(vehicleValue);
+  const er = cleanText(erValue);
+  const key = er && vehicleKey ? `${norm(er)}|${vehicleKey}` : er ? `er:${norm(er)}` : vehicleKey ? `reg:${vehicleKey}` : '';
   return {
     source,
-    er: cleanText(getField(row,'er')),
-    key: makeMatchKey(row, source),
-    vehicleKey: regKey(row),
+    er,
+    key,
+    vehicleKey,
     date: excelDate(getField(row,'date')),
     amount: num(getField(row, amountGroup)),
     litres: num(getField(row,'litres')),
-    vehicle: cleanText(getField(row,'vehicle')).toUpperCase(),
+    vehicle: cleanText(vehicleValue).toUpperCase(),
     driver: cleanText(getField(row,'driver')),
     costCenter: cleanText(getField(row,'costCenter')),
     department: cleanText(getField(row,'department')),
@@ -349,11 +380,11 @@ function mapRow(row, source){
   };
 }
 
-async function readUploadedFile(file){
+async function readUploadedFile(file, readAllSheets=false){
   const data = await file.arrayBuffer();
   const wb = XLSX.read(data,{type:'array'});
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(sheet,{defval:''});
+  const sheetNames = readAllSheets ? wb.SheetNames : wb.SheetNames.slice(0,1);
+  return sheetNames.flatMap(name => XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:''}));
 }
 
 function previewTable(id, rows){
@@ -377,7 +408,7 @@ function updateMappingInfo(){
 }
 
 async function handleBankUpload(e){
-  rawBank = await readUploadedFile(e.target.files[0]);
+  rawBank = await readUploadedFile(e.target.files[0], true);
   bankRows = rawBank.map(r=>mapRow(r,'bank')).filter(r=>r.key || r.amount || r.vehicle || r.driver);
   document.getElementById('bankStatus').textContent = `Loaded ${rawBank.length} bank rows. Mapped ${bankRows.length}.`;
   previewTable('bankPreview', rawBank);
@@ -673,24 +704,30 @@ function renderChart(arr){
   pieChart = new Chart(ctx,{type:'pie',data:{labels:chartRows.map(x=>`${x.group} - ${money(groupBy === 'costCenter' ? x.driver : x.bank)}`),datasets:[{data:chartRows.map(x=>groupBy === 'costCenter' ? x.driver : x.bank)}]},options:{plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:function(context){return `${context.label}`;}}}}}});
 }
 
-function updateVarianceKpis(totals){
-  const safeTotals = totals || reconRows.reduce((t,r)=>{
-    t.bank += r.bankAmount;
-    t.zoho += r.zohoAmount;
-    t.driver += r.driverAmount;
-    t.varianceBZ += r.varianceBZ;
-    t.varianceZD += r.varianceZD;
-    t.varianceBD += r.varianceBD;
-    return t;
-  }, {bank:0, zoho:0, driver:0, varianceBZ:0, varianceZD:0, varianceBD:0});
-  document.getElementById('kpiVarianceBZ').textContent = percentText(safeTotals.varianceBZ, safeTotals.bank);
-  document.getElementById('kpiVarianceZD').textContent = percentText(safeTotals.varianceZD, safeTotals.zoho);
-  document.getElementById('kpiVarianceBD').textContent = percentText(safeTotals.varianceBD, safeTotals.bank);
-  document.getElementById('kpiVarianceBZ').className = Math.abs(percent(safeTotals.varianceBZ, safeTotals.bank)) > 5 ? 'value err' : 'value';
-  document.getElementById('kpiVarianceZD').className = Math.abs(percent(safeTotals.varianceZD, safeTotals.zoho)) > 5 ? 'value err' : 'value';
-  document.getElementById('kpiVarianceBD').className = Math.abs(percent(safeTotals.varianceBD, safeTotals.bank)) > 5 ? 'value err' : 'value';
-}
+function updateVarianceKpis(){
+  const bankTotal = bankRows.reduce((sum,row)=>sum + Number(row.amount || 0), 0);
+  const zohoTotal = zohoRows.reduce((sum,row)=>sum + Number(row.amount || 0), 0);
+  const driverTotal = driverRows.reduce((sum,row)=>sum + Number(row.amount || 0), 0);
 
+  const varianceBZ = bankTotal - zohoTotal;
+  const varianceZD = zohoTotal - driverTotal;
+  const varianceBD = bankTotal - driverTotal;
+
+  function variancePercent(value, base){
+    return Number(base) !== 0 ? (Number(value || 0) / Number(base) * 100).toFixed(2) + '%' : (Number(value || 0) === 0 ? '0.00%' : 'N/A');
+  }
+
+  document.getElementById('kpiVarianceBZAmount').textContent = money(varianceBZ);
+  document.getElementById('kpiVarianceZDAmount').textContent = money(varianceZD);
+  document.getElementById('kpiVarianceBDAmount').textContent = money(varianceBD);
+  document.getElementById('kpiVarianceBZ').textContent = variancePercent(varianceBZ, bankTotal);
+  document.getElementById('kpiVarianceZD').textContent = variancePercent(varianceZD, zohoTotal);
+  document.getElementById('kpiVarianceBD').textContent = variancePercent(varianceBD, bankTotal);
+
+  document.getElementById('kpiVarianceBZAmount').className = bankTotal && Math.abs(varianceBZ / bankTotal * 100) > 5 ? 'value err' : 'value';
+  document.getElementById('kpiVarianceZDAmount').className = zohoTotal && Math.abs(varianceZD / zohoTotal * 100) > 5 ? 'value err' : 'value';
+  document.getElementById('kpiVarianceBDAmount').className = bankTotal && Math.abs(varianceBD / bankTotal * 100) > 5 ? 'value err' : 'value';
+}
 
 function updateKpis(){
   const bankTotal = bankRows.reduce((s,r)=>s+r.amount,0);
