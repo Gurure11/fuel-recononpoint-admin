@@ -12,7 +12,7 @@
     .container{max-width:1500px;margin:auto;background:#fff;padding:22px;border-radius:18px;box-shadow:0 10px 30px rgba(11,43,74,.08)}
     h2,h3{color:var(--blue);margin:.2rem 0 1rem}.muted{color:#617287;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:14px;margin:14px 0}.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.kpi .label{font-size:12px;text-transform:uppercase;color:#65758a}.kpi .value{font-size:24px;font-weight:800;color:var(--blue)}
     label{font-size:13px;font-weight:700;color:#334155}input,select{padding:10px;margin:5px 0;width:100%;border:1px solid var(--line);border-radius:10px;background:#fff}button{padding:10px 15px;border:none;background:var(--blue);color:#fff;border-radius:999px;cursor:pointer;font-weight:700}button.secondary{background:#64748b}button.light{background:#e2e8f0;color:#0f172a}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    table{width:100%;border-collapse:collapse;margin-top:12px;background:#fff}th,td{padding:8px;border-bottom:1px solid #e5edf5;font-size:12px;text-align:left;vertical-align:top}th{background:var(--blue);color:#fff;position:sticky;top:0;z-index:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:14px}.match{background:var(--good)}.mismatch{background:var(--bad)}.missing{background:var(--warn)}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}.ok{background:var(--good);color:#166534}.err{background:var(--bad);color:#991b1b}.warn{background:var(--warn);color:#92400e}canvas{max-height:300px!important}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab{background:#e2e8f0;color:#0f172a}.tab.active{background:var(--blue);color:#fff}.panel{display:none}.panel.active{display:block}.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center}.login-card{width:100%;max-width:430px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:26px;box-shadow:0 14px 38px rgba(11,43,74,.13)}.login-card h2{text-align:center;margin-bottom:6px}.login-card .muted{text-align:center;margin-bottom:16px}.login-error{display:none;background:var(--bad);color:#991b1b;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;font-weight:700}.login-success{display:none;background:var(--good);color:#166534;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;font-weight:700}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.user-chip{background:#eef4fa;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700;color:var(--blue)}@media(max-width:1000px){.grid,.grid4{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
+    table{width:100%;border-collapse:collapse;margin-top:12px;background:#fff}th,td{padding:8px;border-bottom:1px solid #e5edf5;font-size:12px;text-align:left;vertical-align:top}th{background:var(--blue);color:#fff;position:sticky;top:0;z-index:1}.scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:14px}.match{background:var(--good)}.mismatch{background:var(--bad)}.missing{background:var(--warn)}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}.ok{background:var(--good);color:#166534}.err{background:var(--bad);color:#991b1b}.warn{background:var(--warn);color:#92400e}canvas{max-height:300px!important}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab{background:#e2e8f0;color:#0f172a}.tab.active{background:var(--blue);color:#fff}.panel{display:none}.panel.active{display:block}.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center}.login-card{width:100%;max-width:430px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:26px;box-shadow:0 14px 38px rgba(11,43,74,.13)}.login-card h2{text-align:center;margin-bottom:6px}.login-card .muted{text-align:center;margin-bottom:16px}.login-error{display:none;background:var(--bad);color:#991b1b;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;font-weight:700}.login-success{display:none;background:var(--good);color:#166534;border-radius:12px;padding:10px;margin-top:10px;font-size:13px;font-weight:700}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.user-chip{background:#eef4fa;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700;color:var(--blue)}.recon-option{display:flex;align-items:center;gap:9px;margin-top:12px;padding:11px 13px;background:#fff;border:1px solid var(--line);border-radius:12px}.recon-option input{width:auto;margin:0}.recon-option label{margin:0;cursor:pointer}@media(max-width:1000px){.grid,.grid4{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
@@ -75,6 +75,11 @@
           <option value="quarterly">Quarterly</option>
         </select>
       </div>
+    </div>
+    <div class="recon-option">
+      <input type="checkbox" id="includeDriverLog" checked />
+      <label for="includeDriverLog">Include Driver Fuel Log in reconciliation</label>
+      <span class="muted">Untick to reconcile Bank and Zoho only.</span>
     </div>
     <div class="actions">
       <button id="loadFuelLogBtn">Reload Driver Fuel Log</button>
@@ -404,7 +409,7 @@ function updateMappingInfo(){
     <strong>Driver Fuel Log mapped rows:</strong> ${driverRows.length}<br><br>
     Matching key used: <strong>Report_number / ER number</strong> first, then Vehicle Registration where available.<br>
     Zoho expected columns include <strong>Vehicle Reg No.</strong>, <strong>report_number</strong> or <strong>Reference</strong>, and <strong>amount</strong>.<br>
-    The variance report compares Bank vs Zoho, Zoho vs Driver Fuel Log, and Bank vs Driver Fuel Log.`;
+    The variance report compares Bank vs Zoho${isDriverLogIncluded() ? ', Zoho vs Driver Fuel Log, and Bank vs Driver Fuel Log' : ' only. Driver Fuel Log is currently excluded'}.`;
 }
 
 async function handleBankUpload(e){
@@ -517,8 +522,15 @@ function findByErOrBest(base, candidates, usedSet){
   return findBestMatch(base, candidates, usedSet);
 }
 
+function isDriverLogIncluded(){
+  const checkbox = document.getElementById('includeDriverLog');
+  return !checkbox || checkbox.checked;
+}
+
 function makeReconRow(b,z,d,duplicateCounts){
-  const bankAmount = b?.amount || 0, zohoAmount = z?.amount || 0, driverAmount = d?.amount || 0;
+  const includeDriver = isDriverLogIncluded();
+  if (!includeDriver) d = null;
+  const bankAmount = b?.amount || 0, zohoAmount = z?.amount || 0, driverAmount = includeDriver ? (d?.amount || 0) : 0;
   const varianceBZ = bankAmount - zohoAmount;
   const varianceZD = zohoAmount - driverAmount;
   const varianceBD = bankAmount - driverAmount;
@@ -528,11 +540,11 @@ function makeReconRow(b,z,d,duplicateCounts){
   const missing = [];
   if (!b) missing.push('Bank');
   if (!z) missing.push('Zoho');
-  if (!d) missing.push('Driver Log');
+  if (includeDriver && !d) missing.push('Driver Log');
   const variances = [];
   if (b && z && Math.abs(varianceBZ) > 1) variances.push('Bank-Zoho variance');
-  if (z && d && Math.abs(varianceZD) > 1) variances.push('Zoho-Driver variance');
-  if (b && d && Math.abs(varianceBD) > 1) variances.push('Bank-Driver variance');
+  if (includeDriver && z && d && Math.abs(varianceZD) > 1) variances.push('Zoho-Driver variance');
+  if (includeDriver && b && d && Math.abs(varianceBD) > 1) variances.push('Bank-Driver variance');
   if (missing.length) { status = 'Missing'; issue = 'Missing in ' + missing.join(', '); }
   if (variances.length) { status = status === 'Matched' ? 'Mismatch' : status; issue = issue === 'Matched' ? variances.join(', ') : issue + ', ' + variances.join(', '); }
   if (isDuplicateEr) {
@@ -549,10 +561,11 @@ function makeReconRow(b,z,d,duplicateCounts){
     varianceBZPct: percent(varianceBZ, bankAmount),
     varianceZDPct: percent(varianceZD, zohoAmount),
     varianceBDPct: percent(varianceBD, bankAmount),
-    isDuplicateEr, status, issue
+    includeDriver, isDuplicateEr, status, issue
   };
 }
 function runReconciliation(){
+  const includeDriver = isDriverLogIncluded();
   const usedZoho = new Set();
   const usedDriver = new Set();
   const duplicateCounts = findDuplicateErFlags();
@@ -563,24 +576,26 @@ function runReconciliation(){
     const z = zi >= 0 ? zohoRows[zi] : null;
     if (zi >= 0) usedZoho.add(zi);
     const baseForDriver = z || b;
-    const di = findByErOrBest(baseForDriver, driverRows, usedDriver);
-    const d = di >= 0 ? driverRows[di] : null;
-    if (di >= 0) usedDriver.add(di);
+    const di = includeDriver ? findByErOrBest(baseForDriver, driverRows, usedDriver) : -1;
+    const d = includeDriver && di >= 0 ? driverRows[di] : null;
+    if (includeDriver && di >= 0) usedDriver.add(di);
     rows.push(makeReconRow(b,z,d,duplicateCounts));
   });
 
   zohoRows.forEach((z,zi)=>{
     if (usedZoho.has(zi)) return;
-    const di = findByErOrBest(z, driverRows, usedDriver);
-    const d = di >= 0 ? driverRows[di] : null;
-    if (di >= 0) usedDriver.add(di);
+    const di = includeDriver ? findByErOrBest(z, driverRows, usedDriver) : -1;
+    const d = includeDriver && di >= 0 ? driverRows[di] : null;
+    if (includeDriver && di >= 0) usedDriver.add(di);
     rows.push(makeReconRow(null,z,d,duplicateCounts));
   });
 
-  driverRows.forEach((d,di)=>{
-    if (usedDriver.has(di)) return;
-    rows.push(makeReconRow(null,null,d,duplicateCounts));
-  });
+  if (includeDriver) {
+    driverRows.forEach((d,di)=>{
+      if (usedDriver.has(di)) return;
+      rows.push(makeReconRow(null,null,d,duplicateCounts));
+    });
+  }
   reconRows = rows.sort((a,b)=>(a.date||'').localeCompare(b.date||'') || String(a.vehicle).localeCompare(String(b.vehicle)) || String(a.er).localeCompare(String(b.er)));
   renderRecon(); renderSummary(); updateKpis();
   if (APPS_SCRIPT_URL) uploadReconToSheet();
@@ -590,7 +605,7 @@ function renderRecon(){
   if (!reconRows.length) { tbody.innerHTML = '<tr><td colspan="17">No reconciliation records yet.</td></tr>'; return; }
   tbody.innerHTML = reconRows.map(r=>{
     const cls = r.status === 'Matched' ? 'match' : r.status === 'Mismatch' || r.status === 'Duplicate ER' ? 'mismatch' : 'missing';
-    return `<tr class="${cls}"><td>${r.date}</td><td>${r.er}</td><td>${r.vehicle}</td><td>${r.driver}</td><td>${r.costCenter}</td><td>${r.department}</td><td>${money(r.bankAmount)}</td><td>${money(r.zohoAmount)}</td><td>${money(r.driverAmount)}</td><td>${money(r.varianceBZ)}</td><td>${money(r.varianceZD)}</td><td>${money(r.varianceBD)}</td><td class="${varianceClass(r.varianceBZ, r.bankAmount)}">${percentText(r.varianceBZ, r.bankAmount)}</td><td class="${varianceClass(r.varianceZD, r.zohoAmount)}">${percentText(r.varianceZD, r.zohoAmount)}</td><td class="${varianceClass(r.varianceBD, r.bankAmount)}">${percentText(r.varianceBD, r.bankAmount)}</td><td>${r.status}</td><td>${r.issue}</td></tr>`;
+    return `<tr class="${cls}"><td>${r.date}</td><td>${r.er}</td><td>${r.vehicle}</td><td>${r.driver}</td><td>${r.costCenter}</td><td>${r.department}</td><td>${money(r.bankAmount)}</td><td>${money(r.zohoAmount)}</td><td>${r.includeDriver ? money(r.driverAmount) : 'Excluded'}</td><td>${money(r.varianceBZ)}</td><td>${r.includeDriver ? money(r.varianceZD) : 'Excluded'}</td><td>${r.includeDriver ? money(r.varianceBD) : 'Excluded'}</td><td class="${varianceClass(r.varianceBZ, r.bankAmount)}">${percentText(r.varianceBZ, r.bankAmount)}</td><td class="${r.includeDriver ? varianceClass(r.varianceZD, r.zohoAmount) : ''}">${r.includeDriver ? percentText(r.varianceZD, r.zohoAmount) : 'Excluded'}</td><td class="${r.includeDriver ? varianceClass(r.varianceBD, r.bankAmount) : ''}">${r.includeDriver ? percentText(r.varianceBD, r.bankAmount) : 'Excluded'}</td><td>${r.status}</td><td>${r.issue}</td></tr>`;
   }).join('');
 }
 
@@ -640,7 +655,8 @@ function renderSummary(){
   const summary = new Map();
 
   // When Cost Center is selected, keep only rows carrying Driver Fuel Log context and group them by Cost Center -> Department -> Vehicle.
-  const sourceRows = groupBy === 'costCenter' ? reconRows.filter(r => r.driverAmount || r.driverCostCenter || r.driverDepartment || r.driverVehicle) : reconRows;
+  const includeDriver = isDriverLogIncluded();
+  const sourceRows = groupBy === 'costCenter' && includeDriver ? reconRows.filter(r => r.driverAmount || r.driverCostCenter || r.driverDepartment || r.driverVehicle) : reconRows;
 
   sourceRows.forEach(r=>{
     let key = summaryGroupLabel(r);
@@ -650,10 +666,10 @@ function renderSummary(){
     const x = summary.get(key);
     x.bank += r.bankAmount;
     x.zoho += r.zohoAmount;
-    x.driver += r.driverAmount;
+    x.driver += includeDriver ? r.driverAmount : 0;
     x.varianceBZ += r.varianceBZ;
-    x.varianceZD += r.varianceZD;
-    x.varianceBD += r.varianceBD;
+    x.varianceZD += includeDriver ? r.varianceZD : 0;
+    x.varianceBD += includeDriver ? r.varianceBD : 0;
     x.count++;
   });
 
@@ -707,7 +723,8 @@ function renderChart(arr){
 function updateVarianceKpis(){
   const bankTotal = bankRows.reduce((sum,row)=>sum + Number(row.amount || 0), 0);
   const zohoTotal = zohoRows.reduce((sum,row)=>sum + Number(row.amount || 0), 0);
-  const driverTotal = driverRows.reduce((sum,row)=>sum + Number(row.amount || 0), 0);
+  const includeDriver = isDriverLogIncluded();
+  const driverTotal = includeDriver ? driverRows.reduce((sum,row)=>sum + Number(row.amount || 0), 0) : 0;
 
   const varianceBZ = bankTotal - zohoTotal;
   const varianceZD = zohoTotal - driverTotal;
@@ -718,27 +735,28 @@ function updateVarianceKpis(){
   }
 
   document.getElementById('kpiVarianceBZAmount').textContent = money(varianceBZ);
-  document.getElementById('kpiVarianceZDAmount').textContent = money(varianceZD);
-  document.getElementById('kpiVarianceBDAmount').textContent = money(varianceBD);
+  document.getElementById('kpiVarianceZDAmount').textContent = includeDriver ? money(varianceZD) : 'Excluded';
+  document.getElementById('kpiVarianceBDAmount').textContent = includeDriver ? money(varianceBD) : 'Excluded';
   document.getElementById('kpiVarianceBZ').textContent = variancePercent(varianceBZ, bankTotal);
-  document.getElementById('kpiVarianceZD').textContent = variancePercent(varianceZD, zohoTotal);
-  document.getElementById('kpiVarianceBD').textContent = variancePercent(varianceBD, bankTotal);
+  document.getElementById('kpiVarianceZD').textContent = includeDriver ? variancePercent(varianceZD, zohoTotal) : 'Driver Log not included';
+  document.getElementById('kpiVarianceBD').textContent = includeDriver ? variancePercent(varianceBD, bankTotal) : 'Driver Log not included';
 
   document.getElementById('kpiVarianceBZAmount').className = bankTotal && Math.abs(varianceBZ / bankTotal * 100) > 5 ? 'value err' : 'value';
-  document.getElementById('kpiVarianceZDAmount').className = zohoTotal && Math.abs(varianceZD / zohoTotal * 100) > 5 ? 'value err' : 'value';
-  document.getElementById('kpiVarianceBDAmount').className = bankTotal && Math.abs(varianceBD / bankTotal * 100) > 5 ? 'value err' : 'value';
+  document.getElementById('kpiVarianceZDAmount').className = includeDriver && zohoTotal && Math.abs(varianceZD / zohoTotal * 100) > 5 ? 'value err' : 'value';
+  document.getElementById('kpiVarianceBDAmount').className = includeDriver && bankTotal && Math.abs(varianceBD / bankTotal * 100) > 5 ? 'value err' : 'value';
 }
 
 function updateKpis(){
   const bankTotal = bankRows.reduce((s,r)=>s+r.amount,0);
   const zohoTotal = zohoRows.reduce((s,r)=>s+r.amount,0);
-  const driverTotal = driverRows.reduce((s,r)=>s+r.amount,0);
+  const includeDriver = isDriverLogIncluded();
+  const driverTotal = includeDriver ? driverRows.reduce((s,r)=>s+r.amount,0) : 0;
   document.getElementById('kpiBank').textContent = money(bankTotal);
   document.getElementById('kpiZoho').textContent = money(zohoTotal);
-  document.getElementById('kpiDriver').textContent = money(driverTotal);
+  document.getElementById('kpiDriver').textContent = includeDriver ? money(driverTotal) : 'Excluded';
   document.getElementById('kpiExceptions').textContent = reconRows.filter(r=>r.status!=='Matched').length;
   document.getElementById('kpiMissingZoho').textContent = reconRows.filter(r=>r.bankAmount && !r.zohoAmount).length;
-  document.getElementById('kpiMissingDriver').textContent = reconRows.filter(r=>(r.bankAmount || r.zohoAmount) && !r.driverAmount).length;
+  document.getElementById('kpiMissingDriver').textContent = includeDriver ? reconRows.filter(r=>(r.bankAmount || r.zohoAmount) && !r.driverAmount).length : 0;
   document.getElementById('kpiDuplicateEr').textContent = reconRows.filter(r=>r.isDuplicateEr).length;
   updateVarianceKpis();
 }
@@ -748,7 +766,7 @@ function exportWorkbook(type){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reconRows), 'Fuel Recon');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(zohoRows), 'Zoho Mapped');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(driverRows), 'Driver Fuel Log');
+  if (isDriverLogIncluded()) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(driverRows), 'Driver Fuel Log');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bankRows), 'Bank Mapped');
   if (type === 'csv') XLSX.writeFile(wb, 'fuel_recon.csv');
   else XLSX.writeFile(wb, 'fuel_recon.xlsx');
@@ -756,7 +774,7 @@ function exportWorkbook(type){
 
 async function uploadReconToSheet(){
   try{
-    await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'uploadFuelRecon',sheetId:SHEET_ID,sheetTab:FUEL_RECON_TAB,rows:reconRows})});
+    await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'uploadFuelRecon',sheetId:SHEET_ID,sheetTab:FUEL_RECON_TAB,includeDriverLog:isDriverLogIncluded(),rows:reconRows})});
   }catch(e){ console.warn('Could not upload to Fuel Recon tab', e); }
 }
 
@@ -773,6 +791,10 @@ document.getElementById('exportCsvBtn').addEventListener('click',()=>exportWorkb
 document.getElementById('downloadPdfBtn').addEventListener('click',downloadPdfReport);
 document.getElementById('groupBy').addEventListener('change',renderSummary);
 document.getElementById('periodMode').addEventListener('change',renderSummary);
+document.getElementById('includeDriverLog').addEventListener('change',()=>{
+  runReconciliation();
+  updateMappingInfo();
+});
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.panel).classList.add('active');}));
 document.getElementById('loginBtn').addEventListener('click',handleLogin);
 document.getElementById('logoutBtn').addEventListener('click',logout);
